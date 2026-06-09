@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. O Usuário
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  tasks Task[]
+}
+
+// 2. A Empresa/Cliente
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  sectors Sector[]
+}
+
+// 3. O Setor
+model Sector {
+  id        String  @id @default(cuid())
+  name      String
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  processes Process[]
+}
+
+// 4. O Processo
+model Process {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  sectorId    String
+  sector      Sector   @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  tasks Task[]
+}
+
+// 5. A Tarefa
+model Task {
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+  status      String  @default("TODO")
+  priority    String  @default("MEDIUM")
+
+  startDate DateTime?
+  dueDate   DateTime?
+  notes     String?
+  driveLink String?
+
+  processId String
+  process   Process @relation(fields: [processId], references: [id], onDelete: Cascade)
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+// 6. Módulo CRM: O Potencial Cliente (Lead)
+model Lead {
+  id          String   @id @default(cuid())
+  name        String
+  cnpj        String?
+  contactRole String?
+  segment     String?
+  address     String?
+  status      String   @default("PROSPECT")
+  createdAt   DateTime @default(now())
+
+  interactions Interaction[]
+}
+
+// 7. Módulo CRM: Histórico de Interações
+model Interaction {
+  id        String   @id @default(cuid())
+  content   String // Anotação da reunião, ligação, etc.
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
