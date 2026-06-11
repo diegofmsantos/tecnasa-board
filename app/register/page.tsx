@@ -18,7 +18,6 @@ export default function RegisterPage() {
     setLoading(true)
     setError("")
 
-    // Chama a nossa Server Action
     const result = await registerUser(formData)
 
     if (result?.error) {

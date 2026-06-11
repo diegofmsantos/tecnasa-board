@@ -6,7 +6,6 @@ import { CreateLeadModal } from "@/components/create-lead-modal"
 import { CrmKanban } from "@/components/crm-kanban"
 
 export default async function CRMPage() {
-    // Busca todos os leads para preencher o funil
     const leads = await prisma.lead.findMany({
         orderBy: { createdAt: "desc" }
     })

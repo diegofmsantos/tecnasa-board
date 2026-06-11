@@ -17,7 +17,6 @@ export default async function MyTasksPage() {
         where: { email: session.user.email }
     });
 
-    // Busca as tarefas trazendo a árvore inteira para dar contexto
     const myTasks = await prisma.task.findMany({
         where: { userId: currentUser?.id },
         include: {

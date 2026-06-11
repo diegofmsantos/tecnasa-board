@@ -21,7 +21,6 @@ export default async function LeadPage({ params }: Props) {
 
     if (!lead) notFound()
 
-    // O botão de converter vai disparar esta função nativa do servidor
     const handleConvert = async () => {
         "use server"
         await convertLeadToCompany(lead.id, lead.name)
