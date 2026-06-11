@@ -15,7 +15,8 @@ model User {
   password  String
   createdAt DateTime @default(now())
 
-  tasks Task[]
+  tasks        Task[]
+  deliverables Deliverable[]
 }
 
 // 2. A Empresa/Cliente
@@ -24,7 +25,18 @@ model Company {
   name      String
   createdAt DateTime @default(now())
 
-  sectors Sector[]
+  cnpj         String?
+  segment      String?
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  address      String?
+  website      String?
+  notes        String?
+  logoUrl      String?
+
+  sectors      Sector[]
+  deliverables Deliverable[]
 }
 
 // 3. O Setor
@@ -87,8 +99,22 @@ model Lead {
 // 7. Módulo CRM: Histórico de Interações
 model Interaction {
   id        String   @id @default(cuid())
-  content   String // Anotação da reunião, ligação, etc.
+  content   String
   leadId    String
   lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+// 8. NOVO: Entregáveis da Pasta do Cliente
+model Deliverable {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   @default("OUTRO")
+  url       String
+  notes     String?
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }

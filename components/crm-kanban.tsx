@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { updateLeadStatus, convertLeadToCompany } from "@/app/actions"
+import { updateLeadStatus, convertLeadToCompany, deleteLead } from "@/app/actions"
 import Link from "next/link"
-import { Building, MapPin, Briefcase, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Building, MapPin, Briefcase, CheckCircle2, Trash2 } from "lucide-react"
 
 // As etapas definidas pelo seu sócio
 const FUNNEL_STAGES = [
@@ -83,15 +83,30 @@ export function CrmKanban({ leads }: { leads: any[] }) {
                                         }}
                                         className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:border-tecnasa-primary transition-all group"
                                     >
-                                        <Link href={`/crm/${lead.id}`}>
-                                            <h4 className="font-bold text-dark-primary text-sm mb-2 group-hover:text-tecnasa-primary transition-colors flex items-center gap-2">
-                                                <Building className="h-4 w-4" /> {lead.name}
-                                            </h4>
-                                            <div className="text-xs text-text-soft space-y-1">
-                                                {lead.segment && <p className="flex items-center gap-1 truncate"><Briefcase className="h-3 w-3" /> {lead.segment}</p>}
-                                                {lead.address && <p className="flex items-center gap-1 truncate"><MapPin className="h-3 w-3" /> {lead.address}</p>}
-                                            </div>
-                                        </Link>
+                                        <div className="flex items-start justify-between gap-2">
+                                            <Link href={`/crm/${lead.id}`} className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-dark-primary text-sm mb-2 group-hover:text-tecnasa-primary transition-colors flex items-center gap-2">
+                                                    <Building className="h-4 w-4" /> {lead.name}
+                                                </h4>
+                                                <div className="text-xs text-text-soft space-y-1">
+                                                    {lead.segment && <p className="flex items-center gap-1 truncate"><Briefcase className="h-3 w-3" /> {lead.segment}</p>}
+                                                    {lead.address && <p className="flex items-center gap-1 truncate"><MapPin className="h-3 w-3" /> {lead.address}</p>}
+                                                </div>
+                                            </Link>
+
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    if (window.confirm(`Excluir "${lead.name}"?`)) {
+                                                        startTransition(() => deleteLead(lead.id))
+                                                    }
+                                                }}
+                                                className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0 p-1"
+                                                title="Excluir prospecto"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

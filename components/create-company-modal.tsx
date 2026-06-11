@@ -19,7 +19,7 @@ export function CreateCompanyModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-tecnasa-primary text-white hover:bg-dark-primary transition-colors shadow-md">
+        <Button className="bg-tecnasa-primary text-tecnasa-accent hover:bg-dark-primary transition-colors shadow-md">
           <Plus className="h-4 w-4 mr-2" /> Nova Empresa
         </Button>
       </DialogTrigger>

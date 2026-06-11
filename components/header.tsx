@@ -22,7 +22,7 @@ export async function Header() {
         </div>
 
         {/* Avatar Dinâmico */}
-        <div className="w-10 h-10 rounded-full bg-tecnasa-primary text-white flex items-center justify-center font-bold shadow-sm">
+        <div className="w-10 h-10 rounded-full bg-tecnasa-primary text-tecnasa-accent flex items-center justify-center font-bold shadow-sm">
           {initial}
         </div>
 

@@ -3,79 +3,97 @@ import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Building2, BarChart2 } from "lucide-react"
+import { ArrowLeft, Building2 } from "lucide-react"
 import { notFound } from "next/navigation"
-import { PlannerTable } from "@/components/planner-table"
 import { CreateSectorModal } from "@/components/create-sector-modal"
+import { CompanyTabs } from "@/components/company-tabs"
 
 type Props = {
-    params: Promise<{ id: string }>
+  params: Promise<{ id: string }>
 }
 
 export default async function CompanyPage({ params }: Props) {
-    const { id } = await params
+  const { id } = await params
 
-    // 1. Busca os Usuários para o Dropdown da tabela
-    const users = await prisma.user.findMany({ select: { id: true, name: true } })
+  const users = await prisma.user.findMany({ select: { id: true, name: true } })
 
-    // 2. Busca a Empresa com a "Escadinha" completa (Projetos > Etapas > Atividades)
-    const company = await prisma.company.findUnique({
-        where: { id },
+  const company = await prisma.company.findUnique({
+    where: { id },
+    include: {
+      deliverables: {
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true } } },
+      },
+      sectors: {
         include: {
-            sectors: {
-                include: {
-                    processes: { 
-                        include: {
-                            tasks: { orderBy: { createdAt: 'asc' } } 
-                        },
-                        orderBy: { createdAt: 'asc' }
-                    }
-                },
-                orderBy: { name: 'asc' }
-            }
-        }
-    })
+          processes: {
+            include: {
+              tasks: { orderBy: { createdAt: "asc" } },
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+        orderBy: { name: "asc" },
+      },
+    },
+  })
 
-    if (!company) notFound()
+  if (!company) notFound()
 
-    return (
-        <div className="min-h-screen bg-neutral-bg text-text-main flex flex-col">
-            <Sidebar />
-            <Header />
+  // Métricas rápidas para o dashboard interno
+  const companyFilter = { process: { sector: { companyId: id } } }
+  const [totalTasks, doneCount, inProgressCount, todoCount] = await Promise.all([
+    prisma.task.count({ where: companyFilter }),
+    prisma.task.count({ where: { ...companyFilter, status: "DONE" } }),
+    prisma.task.count({ where: { ...companyFilter, status: "IN_PROGRESS" } }),
+    prisma.task.count({ where: { ...companyFilter, status: "TODO" } }),
+  ])
 
-            <main className="pl-72 pt-24 pr-8 pb-8 flex-1">
-                <Link href="/">
-                    <Button variant="ghost" className="mb-4 text-text-soft hover:text-dark-primary -ml-4">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Voltar para Clientes
-                    </Button>
-                </Link>
+  return (
+    <div className="min-h-screen bg-neutral-bg text-text-main flex flex-col">
+      <Sidebar />
+      <Header />
 
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <div className="flex items-center gap-2 text-tecnasa-primary mb-1">
-                            <Building2 className="h-4 w-4" />
-                            <span className="text-sm font-semibold uppercase tracking-wider">Painel de Planejamento</span>
-                        </div>
-                        <h1 className="text-3xl font-bold tracking-tight text-dark-primary">{company.name}</h1>
-                    </div>
+      <main className="pl-72 pt-24 pr-8 pb-8 flex-1">
+        <Link href="/">
+          <Button variant="ghost" className="mb-4 text-text-soft hover:text-dark-primary -ml-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar para Clientes
+          </Button>
+        </Link>
 
-                    <div className="flex gap-3">
-                        <Link href={`/company/${company.id}/dashboard`}>
-                            <Button variant="outline" className="border-tecnasa-primary text-tecnasa-primary hover:bg-tecnasa-primary/10 shadow-sm">
-                                <BarChart2 className="h-4 w-4 mr-2" /> Relatório Executivo
-                            </Button>
-                        </Link>
+        {/* Cabeçalho da Empresa */}
+        <div className="flex items-start justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-400 shadow-sm flex-shrink-0">
+              {company.logoUrl ? (
+                <img
+                  src={company.logoUrl}
+                  alt={`Logo ${company.name}`}
+                  className="w-full h-full object-contain p-1"
+                />
+              ) : (
+                <Building2 className="h-7 w-7 text-tecnasa-primary" />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 text-tecnasa-primary mb-1">...</div>
+              <h1 className="text-3xl font-bold...">{company.name}</h1>
+            </div>
+          </div>
 
-                        {/* Como mudamos a nomenclatura, renomeamos os botões para refletir o novo modelo */}
-                        <CreateSectorModal companyId={company.id} />
-                    </div>
-                </div>
-
-                {/* Nossa Mega Tabela no estilo Monday */}
-                <PlannerTable sectors={company.sectors} companyId={company.id} users={users} />
-
-            </main>
+          {/* Ação rápida de novo setor — só aparece relevante na aba de planejamento,
+              mas mantemos no header para facilidade */}
+          <CreateSectorModal companyId={company.id} />
         </div>
-    )
+
+        {/* Componente de Abas (Client Component) */}
+        <CompanyTabs
+          company={company}
+          users={users}
+          metrics={{ totalTasks, doneCount, inProgressCount, todoCount }}
+        />
+      </main>
+    </div>
+  )
 }

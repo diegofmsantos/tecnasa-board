@@ -1,6 +1,6 @@
 "use client"
 
-import { updateTaskInline, deletePlannerTask, updateSectorName, createPlannerProcess, createPlannerTask, updateProcessName, deletePlannerProcess } from "@/app/actions"
+import { updateTaskInline, deletePlannerTask, updateSectorName, createPlannerProcess, createPlannerTask, updateProcessName, deletePlannerProcess, deletePlannerSector } from "@/app/actions"
 import { useTransition, useState } from "react"
 import { ExternalLink, Trash2, Plus, ChevronDown, ChevronRight, Table2, CalendarRange } from "lucide-react"
 
@@ -38,6 +38,11 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
     function handleDeleteProcess(processId: string) {
         if (window.confirm("Atenção: Excluir esta etapa apagará TODAS as atividades dentro dela. Deseja continuar?")) {
             startTransition(() => { deletePlannerProcess(processId, companyId) })
+        }
+    }
+    function handleDeleteSector(sectorId: string) {
+        if (window.confirm("Atenção: Apagar este setor removerá TODAS as etapas e atividades dentro dele. Deseja continuar?")) {
+            startTransition(() => { deletePlannerSector(sectorId, companyId) })
         }
     }
 
@@ -111,14 +116,22 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
                                 className="text-lg font-bold bg-transparent border-b border-transparent hover:border-white/50 focus:border-white outline-none w-full px-1"
                             />
                         </div>
-                        {activeTab === "TABLE" && (
+                        <div className="flex items-center gap-2">
+                            {activeTab === "TABLE" && (
+                                <button
+                                    onClick={() => handleAddProcess(sector.id)}
+                                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                                >
+                                    <Plus className="h-4 w-4" /> Nova Etapa
+                                </button>
+                            )}
                             <button
-                                onClick={() => handleAddProcess(sector.id)}
-                                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                                onClick={() => handleDeleteSector(sector.id)}
+                                className="flex items-center gap-2 bg-red-500/20 hover:bg-red-500/40 text-red-300 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
                             >
-                                <Plus className="h-4 w-4" /> Nova Etapa
+                                <Trash2 className="h-4 w-4" /> Apagar Setor
                             </button>
-                        )}
+                        </div>
                     </div>
 
                     <div className="p-4 space-y-6">
@@ -126,7 +139,6 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
                             <p className="text-text-soft text-sm italic py-4">Nenhuma etapa criada.</p>
                         ) : (
 
-                            // SE A ABA FOR TABELA, RENDERIZA O QUE JÁ TÍNHAMOS:
                             activeTab === "TABLE" ? (
                                 sector.processes.map((process: any) => {
                                     const isCollapsed = collapsedProcesses[process.id]
@@ -176,7 +188,7 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
                                                                             <td className="px-4 py-2 border-r border-gray-100">
                                                                                 <input type="text" defaultValue={task.title} onBlur={(e) => handleCellChange(task.id, "title", e.target.value)} className="w-full p-1.5 font-medium text-dark-primary rounded hover:border-gray-200 outline-none bg-transparent" />
                                                                             </td>
-                                                                            <td className="px-4 py-2 border-r border-gray-100">
+                                                                            <td className="px-2 py-2 border-r border-gray-100">
                                                                                 <select defaultValue={task.status} onChange={(e) => handleCellChange(task.id, "status", e.target.value)} className={`w-full p-1.5 rounded-md font-bold text-xs outline-none cursor-pointer text-center ${statusColors[task.status] || statusColors["TODO"]}`}>
                                                                                     <option value="TODO" className="bg-white text-gray-700">Novo</option>
                                                                                     <option value="IN_PROGRESS" className="bg-white text-gray-700">Em Andamento</option>

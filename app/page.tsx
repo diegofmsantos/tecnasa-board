@@ -9,10 +9,9 @@ import { ptBR } from "date-fns/locale";
 import { CreateCompanyModal } from "@/components/create-company-modal";
 
 export default async function Home() {
-  // Agora buscamos as Empresas, e já incluímos a contagem de setores de cada uma!
   const companies = await prisma.company.findMany({
     orderBy: { createdAt: "desc" },
-    include: { sectors: true } 
+    include: { sectors: true }
   });
 
   return (
@@ -26,7 +25,7 @@ export default async function Home() {
             <h1 className="text-2xl font-bold tracking-tight text-dark-primary">Empresas / Clientes</h1>
             <p className="text-text-soft text-sm">Gerencie os clientes e suas estruturas na Tecnasa.</p>
           </div>
-          
+
           {/* Nosso novo botão de criar empresa */}
           <CreateCompanyModal />
         </div>
@@ -39,13 +38,20 @@ export default async function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {companies.map((company) => (
-              // Ao clicar na empresa, ele vai para a rota /company/[id]
               <Link href={`/company/${company.id}`} key={company.id}>
-                <Card className="hover:shadow-lg transition-shadow border-white/50 bg-white cursor-pointer h-full">
+                <Card className="hover:shadow-lg transition-shadow border-white/50 bg-white cursor-pointer h-full border-2 hover:border-tecnasa-accent">
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-tecnasa-primary/10 rounded-lg text-tecnasa-primary">
-                        <Building2 className="h-5 w-5" />
+                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center bg-gray-400">
+                        {company.logoUrl ? (
+                          <img
+                            src={company.logoUrl}
+                            alt={`Logo ${company.name}`}
+                            className="w-full h-full object-contain p-0.5"
+                          />
+                        ) : (
+                          <Building2 className="h-5 w-5 text-tecnasa-primary" />
+                        )}
                       </div>
                       <CardTitle className="text-lg font-bold text-dark-primary">
                         {company.name}

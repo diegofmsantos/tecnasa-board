@@ -61,6 +61,11 @@ export async function createSector(formData: FormData) {
   revalidatePath(`/company/${companyId}`);
 }
 
+export async function deletePlannerSector(sectorId: string, companyId: string) {
+  await prisma.sector.delete({ where: { id: sectorId } })
+  revalidatePath(`/company/${companyId}`)
+}
+
 // 2. Criar Processo (Antigo createProject)
 export async function createProcess(formData: FormData) {
   const title = formData.get("title") as string;
@@ -234,4 +239,9 @@ export async function convertLeadToCompany(leadId: string, companyName: string) 
 
   // 3. Redireciona direto para iniciar o projeto
   redirect(`/company/${company.id}`);
+}
+
+export async function deleteLead(leadId: string) {
+  await prisma.lead.delete({ where: { id: leadId } })
+  revalidatePath("/crm")
 }
