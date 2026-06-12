@@ -65,7 +65,7 @@ export default async function CompanyPage({ params }: Props) {
         {/* Cabeçalho da Empresa */}
         <div className="flex items-start justify-between mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-400 shadow-sm flex-shrink-0">
+            <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center bg-white shadow-sm flex-shrink-0">
               {company.logoUrl ? (
                 <img
                   src={company.logoUrl}
@@ -77,7 +77,6 @@ export default async function CompanyPage({ params }: Props) {
               )}
             </div>
             <div>
-              <div className="flex items-center gap-2 text-tecnasa-primary mb-1">...</div>
               <h1 className="text-3xl font-bold...">{company.name}</h1>
             </div>
           </div>

@@ -42,7 +42,7 @@ export default async function Home() {
                 <Card className="hover:shadow-lg transition-shadow border-white/50 bg-white cursor-pointer h-full border-2 hover:border-tecnasa-accent">
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center bg-gray-400">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center bg-white">
                         {company.logoUrl ? (
                           <img
                             src={company.logoUrl}

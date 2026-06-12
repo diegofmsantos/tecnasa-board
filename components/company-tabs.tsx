@@ -33,7 +33,7 @@ export function CompanyTabs({ company, users, metrics }: CompanyTabsProps) {
   return (
     <div>
       {/* Barra de Abas */}
-      <div className="flex items-center gap-1 border-b border-gray-200 mb-8">
+      <div className="flex items-center pb-2 gap-1 border-b border-gray-200 bg-tecnasa-primary mb-8 rounded-xl">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -41,16 +41,16 @@ export function CompanyTabs({ company, users, metrics }: CompanyTabsProps) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors relative whitespace-nowrap ${
+              className={`flex items-center gap-2 p-5  text-sm font-medium transition-colors relative whitespace-nowrap ${
                 isActive
-                  ? "text-dark-primary"
-                  : "text-text-soft hover:text-dark-primary"
+                  ? "text-tecnasa-accent"
+                  : "text-white hover:text-tecnasa-accent"
               }`}
             >
               <Icon className="h-4 w-4" />
               {tab.label}
               {isActive && (
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-tecnasa-primary rounded-t-full" />
+                <span className="absolute bottom-3 left-2 w-full h-[2px] bg-tecnasa-accent rounded-t-full" />
               )}
             </button>
           )

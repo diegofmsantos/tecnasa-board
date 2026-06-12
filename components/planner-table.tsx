@@ -8,14 +8,12 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
     const [isPending, startTransition] = useTransition()
     const [collapsedProcesses, setCollapsedProcesses] = useState<Record<string, boolean>>({})
 
-    // NOVO: Controle das Abas (Table ou Gantt)
     const [activeTab, setActiveTab] = useState<"TABLE" | "GANTT">("TABLE")
 
     function toggleProcess(processId: string) {
         setCollapsedProcesses(prev => ({ ...prev, [processId]: !prev[processId] }))
     }
 
-    // --- Funções de Ações ---
     function handleCellChange(taskId: string, field: string, value: string) {
         startTransition(() => { updateTaskInline(taskId, field, value === "" ? null : value, companyId) })
     }
@@ -87,20 +85,26 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
         <div className={`space-y-6 ${isPending ? 'opacity-70 pointer-events-none' : ''}`}>
 
             {/* ABAS DE NAVEGAÇÃO (ESTILO MONDAY) */}
-            <div className="flex items-center gap-6 border-b border-gray-200 px-2">
+            <div className="flex items-center gap-1 border-b border-gray-200 p-3 mb-6 bg-tecnasa-primary rounded-xl">
                 <button
                     onClick={() => setActiveTab("TABLE")}
-                    className={`flex items-center gap-2 pb-3 px-2 font-medium text-sm transition-colors relative ${activeTab === "TABLE" ? "text-dark-primary" : "text-gray-400 hover:text-gray-600"}`}
+                    className={`flex items-center gap-2 p-2 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === "TABLE" ? "text-tecnasa-accent" : "text-white hover:text-tecnasa-accent"
+                        }`}
                 >
                     <Table2 className="h-4 w-4" /> Tabela Principal
-                    {activeTab === "TABLE" && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-tecnasa-primary rounded-t-full"></span>}
+                    {activeTab === "TABLE" && (
+                        <span className="absolute bottom-0 left-0 w-full h-[3px] bg-tecnasa-accent rounded-t-full" />
+                    )}
                 </button>
                 <button
                     onClick={() => setActiveTab("GANTT")}
-                    className={`flex items-center gap-2 pb-3 px-2 font-medium text-sm transition-colors relative ${activeTab === "GANTT" ? "text-dark-primary" : "text-gray-400 hover:text-gray-600"}`}
+                    className={`flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === "GANTT" ? "text-tecnasa-accent" : "text-white hover:text-tecnasa-accent"
+                        }`}
                 >
                     <CalendarRange className="h-4 w-4" /> Visão Gantt
-                    {activeTab === "GANTT" && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-tecnasa-primary rounded-t-full"></span>}
+                    {activeTab === "GANTT" && (
+                        <span className="absolute bottom-1 left-0 w-full h-[3px] bg-tecnasa-accent rounded-t-full" />
+                    )}
                 </button>
             </div>
 
