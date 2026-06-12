@@ -7,6 +7,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { updateCompanyInfo } from "@/app/actions.company"
+import { CompanyStatusSelector } from "./company-status-selector"
 
 interface Company {
   id: string
@@ -79,7 +80,13 @@ export function CompanyOverview({ company }: { company: Company }) {
         {/* Card principal de dados */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-dark-primary">Dados da Empresa</h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-bold text-dark-primary">Dados da Empresa</h2>
+              <CompanyStatusSelector
+                companyId={company.id}
+                currentStatus={(company as any).status ?? "EM_DIAGNOSTICO"}
+              />
+            </div>
             <Button
               size="sm"
               onClick={() => setIsEditing(true)}

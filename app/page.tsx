@@ -7,6 +7,7 @@ import { Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CreateCompanyModal } from "@/components/create-company-modal";
+import { COMPANY_STATUS_CONFIG } from "@/lib/company-status";
 
 export default async function Home() {
   const companies = await prisma.company.findMany({
@@ -25,8 +26,6 @@ export default async function Home() {
             <h1 className="text-2xl font-bold tracking-tight text-dark-primary">Empresas / Clientes</h1>
             <p className="text-text-soft text-sm">Gerencie os clientes e suas estruturas na Tecnasa.</p>
           </div>
-
-          {/* Nosso novo botão de criar empresa */}
           <CreateCompanyModal />
         </div>
 
@@ -37,36 +36,51 @@ export default async function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {companies.map((company) => (
-              <Link href={`/company/${company.id}`} key={company.id}>
-                <Card className="hover:shadow-lg transition-shadow border-white/50 bg-white cursor-pointer h-full border-2 hover:border-tecnasa-accent">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center bg-white">
-                        {company.logoUrl ? (
-                          <img
-                            src={company.logoUrl}
-                            alt={`Logo ${company.name}`}
-                            className="w-full h-full object-contain p-0.5"
-                          />
-                        ) : (
-                          <Building2 className="h-5 w-5 text-tecnasa-primary" />
-                        )}
+            {companies.map((company) => {
+              const statusKey = (company as any).status ?? "EM_DIAGNOSTICO"
+              const statusCfg = COMPANY_STATUS_CONFIG[statusKey] ?? COMPANY_STATUS_CONFIG.EM_DIAGNOSTICO
+
+              return (
+                <Link href={`/company/${company.id}`} key={company.id}>
+                  <Card className="hover:shadow-lg transition-shadow border-white/50 bg-white cursor-pointer h-full">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-3">
+                        {/* Logo ou ícone padrão */}
+                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center bg-tecnasa-primary/10">
+                          {(company as any).logoUrl ? (
+                            <img
+                              src={(company as any).logoUrl}
+                              alt={`Logo ${company.name}`}
+                              className="w-full h-full object-contain p-0.5"
+                            />
+                          ) : (
+                            <Building2 className="h-5 w-5 text-tecnasa-primary" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="text-base font-bold text-dark-primary truncate">
+                            {company.name}
+                          </CardTitle>
+                          {/* Badge de status */}
+                          <div className="mt-1.5">
+                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full border ${statusCfg.bg} ${statusCfg.color}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusCfg.dot}`} />
+                              {statusCfg.label}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <CardTitle className="text-lg font-bold text-dark-primary">
-                        {company.name}
-                      </CardTitle>
-                    </div>
-                    <p className="text-sm text-text-soft mt-2 font-medium">
-                      {company.sectors.length} setor(es) cadastrado(s)
-                    </p>
-                  </CardHeader>
-                  <CardFooter className="pt-2 text-xs text-text-soft border-t border-gray-100 mt-4">
-                    Cadastrada em {format(company.createdAt, "dd 'de' MMMM", { locale: ptBR })}
-                  </CardFooter>
-                </Card>
-              </Link>
-            ))}
+                      <p className="text-sm text-text-soft mt-2 font-medium">
+                        {company.sectors.length} setor(es) cadastrado(s)
+                      </p>
+                    </CardHeader>
+                    <CardFooter className="pt-2 text-xs text-text-soft border-t border-gray-100 mt-4">
+                      Cadastrada em {format(company.createdAt, "dd 'de' MMMM", { locale: ptBR })}
+                    </CardFooter>
+                  </Card>
+                </Link>
+              )
+            })}
           </div>
         )}
       </main>

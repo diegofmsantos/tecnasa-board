@@ -28,7 +28,12 @@ export default async function CompanyPage({ params }: Props) {
         include: {
           processes: {
             include: {
-              tasks: { orderBy: { createdAt: "asc" } },
+              tasks: {
+                orderBy: { createdAt: "asc" },
+                include: {
+                  _count: { select: { comments: true } },
+                },
+              },
             },
             orderBy: { createdAt: "asc" },
           },
@@ -40,7 +45,6 @@ export default async function CompanyPage({ params }: Props) {
 
   if (!company) notFound()
 
-  // Métricas rápidas para o dashboard interno
   const companyFilter = { process: { sector: { companyId: id } } }
   const [totalTasks, doneCount, inProgressCount, todoCount] = await Promise.all([
     prisma.task.count({ where: companyFilter }),
@@ -62,13 +66,13 @@ export default async function CompanyPage({ params }: Props) {
           </Button>
         </Link>
 
-        {/* Cabeçalho da Empresa */}
         <div className="flex items-start justify-between mb-8">
           <div className="flex items-center gap-4">
+            {/* Logo da empresa */}
             <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center bg-white shadow-sm flex-shrink-0">
-              {company.logoUrl ? (
+              {(company as any).logoUrl ? (
                 <img
-                  src={company.logoUrl}
+                  src={(company as any).logoUrl}
                   alt={`Logo ${company.name}`}
                   className="w-full h-full object-contain p-1"
                 />
@@ -77,16 +81,24 @@ export default async function CompanyPage({ params }: Props) {
               )}
             </div>
             <div>
-              <h1 className="text-3xl font-bold...">{company.name}</h1>
+              <div className="flex items-center gap-2 text-tecnasa-primary mb-1">
+                <Building2 className="h-4 w-4" />
+                <span className="text-sm font-semibold uppercase tracking-wider">
+                  Pasta do Cliente
+                </span>
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight text-dark-primary">
+                {company.name}
+              </h1>
+              {(company as any).segment && (
+                <p className="text-text-soft text-sm mt-1">{(company as any).segment}</p>
+              )}
             </div>
           </div>
 
-          {/* Ação rápida de novo setor — só aparece relevante na aba de planejamento,
-              mas mantemos no header para facilidade */}
           <CreateSectorModal companyId={company.id} />
         </div>
 
-        {/* Componente de Abas (Client Component) */}
         <CompanyTabs
           company={company}
           users={users}

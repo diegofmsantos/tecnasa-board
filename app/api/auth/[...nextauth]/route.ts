@@ -1,7 +1,7 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import NextAuth from "next-auth"
+import CredentialsProvider from "next-auth/providers/credentials"
+import { prisma } from "@/lib/prisma"
+import bcrypt from "bcryptjs"
 
 const handler = NextAuth({
   providers: [
@@ -12,36 +12,34 @@ const handler = NextAuth({
         password: { label: "Senha", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password) return null
 
-        // 1. Busca o usuário no banco pelo e-mail
-        const user = await prisma.user.findUnique({ 
-          where: { email: credentials.email } 
-        });
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        })
+        if (!user) return null
 
-        if (!user) return null;
+        const isValid = await bcrypt.compare(credentials.password, user.password)
+        if (!isValid) return null
 
-        // 2. Compara a senha digitada com a senha criptografada do banco
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isValid) return null;
-
-        // 3. Login com sucesso! Retorna os dados do usuário para a sessão
-        return { 
-          id: user.id, 
-          name: user.name, 
-          email: user.email 
-        };
+        return { id: user.id, name: user.name, email: user.email }
       }
     })
   ],
-  pages: {
-    signIn: '/login', // Dizemos ao NextAuth onde fica a nossa tela de login
+  pages: { signIn: "/login" },
+  session: { strategy: "jwt" },
+  // ← Callbacks adicionados: injetam o id do banco no token e na session
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) token.id = user.id
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) (session.user as any).id = token.id
+      return session
+    },
   },
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.NEXTAUTH_SECRET, // Variável de segurança (configuraremos a seguir)
-});
+  secret: process.env.NEXTAUTH_SECRET,
+})
 
-export { handler as GET, handler as POST };
+export { handler as GET, handler as POST }

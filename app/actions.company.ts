@@ -11,7 +11,6 @@ export async function updateCompanyInfo(formData: FormData) {
 
   const data = {
     name: (formData.get("name") as string) || undefined,
-    logoUrl: (formData.get("logoUrl") as string) || null,
     cnpj: (formData.get("cnpj") as string) || null,
     segment: (formData.get("segment") as string) || null,
     contactName: (formData.get("contactName") as string) || null,
@@ -24,6 +23,15 @@ export async function updateCompanyInfo(formData: FormData) {
 
   await prisma.company.update({ where: { id: companyId }, data })
   revalidatePath(`/company/${companyId}`)
+  return { success: true }
+}
+
+
+export async function updateCompanyStatus(companyId: string, status: string) {
+  if (!companyId || !status) return { error: "Dados inválidos." }
+  await prisma.company.update({ where: { id: companyId }, data: { status } })
+  revalidatePath(`/company/${companyId}`)
+  revalidatePath("/")
   return { success: true }
 }
 
@@ -53,6 +61,7 @@ export async function createDeliverable(formData: FormData) {
   revalidatePath(`/company/${companyId}`)
   return { success: true }
 }
+
 
 export async function deleteDeliverable(deliverableId: string, companyId: string) {
   await prisma.deliverable.delete({ where: { id: deliverableId } })

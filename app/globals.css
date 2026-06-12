@@ -160,3 +160,8 @@
     @apply font-sans;
   }
 }
+
+/* SVAR Gantt - altura total do tema */
+.wx-theme {
+  height: 100%;
+}

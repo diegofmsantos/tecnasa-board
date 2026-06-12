@@ -17,6 +17,7 @@ model User {
 
   tasks        Task[]
   deliverables Deliverable[]
+  comments     TaskComment[]
 }
 
 // 2. A Empresa/Cliente
@@ -25,6 +26,7 @@ model Company {
   name      String
   createdAt DateTime @default(now())
 
+  logoUrl      String?
   cnpj         String?
   segment      String?
   contactName  String?
@@ -33,7 +35,7 @@ model Company {
   address      String?
   website      String?
   notes        String?
-  logoUrl      String?
+  status       String  @default("EM_DIAGNOSTICO") 
 
   sectors      Sector[]
   deliverables Deliverable[]
@@ -78,11 +80,23 @@ model Task {
   process   Process @relation(fields: [processId], references: [id], onDelete: Cascade)
 
   userId    String?
+  user      User?         @relation(fields: [userId], references: [id])
+  comments  TaskComment[]
+  createdAt DateTime      @default(now())
+}
+
+// 6. NOVO: Comentários por Tarefa
+model TaskComment {
+  id        String   @id @default(cuid())
+  content   String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String?
   user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }
 
-// 6. Módulo CRM: O Potencial Cliente (Lead)
+// 7. Módulo CRM: O Potencial Cliente (Lead)
 model Lead {
   id          String   @id @default(cuid())
   name        String
@@ -96,7 +110,7 @@ model Lead {
   interactions Interaction[]
 }
 
-// 7. Módulo CRM: Histórico de Interações
+// 8. Módulo CRM: Histórico de Interações
 model Interaction {
   id        String   @id @default(cuid())
   content   String
@@ -105,7 +119,7 @@ model Interaction {
   createdAt DateTime @default(now())
 }
 
-// 8. NOVO: Entregáveis da Pasta do Cliente
+// 9. Entregáveis da Pasta do Cliente
 model Deliverable {
   id        String   @id @default(cuid())
   name      String

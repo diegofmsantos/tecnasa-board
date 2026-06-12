@@ -33,7 +33,7 @@ export function CompanyTabs({ company, users, metrics }: CompanyTabsProps) {
   return (
     <div>
       {/* Barra de Abas */}
-      <div className="flex items-center pb-2 gap-1 border-b border-gray-200 bg-tecnasa-primary mb-8 rounded-xl">
+      <div className="flex items-center pb-2 gap-1 border-b border-gray-200 bg-dark-primary mb-8 rounded-xl">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
