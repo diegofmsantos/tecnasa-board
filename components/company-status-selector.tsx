@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import { COMPANY_STATUS_CONFIG, COMPANY_STATUS_OPTIONS } from "@/lib/company-status"
 import { ChevronDown } from "lucide-react"
-import { updateCompanyStatus } from "@/app/actions.company"
+import { updateCompanyStatus } from "@/app/actions.company-clerk"
 
 interface Props {
   companyId: string

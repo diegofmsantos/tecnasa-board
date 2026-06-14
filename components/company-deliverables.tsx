@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { createDeliverable, deleteDeliverable } from "@/app/actions.company"
+import { createDeliverable, deleteDeliverable } from "@/app/actions.company-clerk"
 
 // Configuração visual de cada tipo de entregável
 const TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
@@ -105,7 +105,7 @@ export function CompanyDeliverables({ companyId, deliverables }: Props) {
 
         <Button
           onClick={() => setShowForm((v) => !v)}
-          className="bg-tecnasa-primary text-white hover:bg-dark-primary shadow-sm"
+          className="bg-tecnasa-primary text-tecnasa-accent hover:bg-dark-primary transition-colors shadow-md"
         >
           {showForm ? (
             <><X className="h-4 w-4 mr-2" /> Cancelar</>

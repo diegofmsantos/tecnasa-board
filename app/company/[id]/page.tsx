@@ -7,6 +7,7 @@ import { ArrowLeft, Building2 } from "lucide-react"
 import { notFound } from "next/navigation"
 import { CreateSectorModal } from "@/components/create-sector-modal"
 import { CompanyTabs } from "@/components/company-tabs"
+import { PdfDownloadButton } from "@/components/pdf-download-button"
 
 type Props = {
   params: Promise<{ id: string }>
@@ -32,6 +33,7 @@ export default async function CompanyPage({ params }: Props) {
                 orderBy: { createdAt: "asc" },
                 include: {
                   _count: { select: { comments: true } },
+                  user: { select: { id: true, name: true } },
                 },
               },
             },
@@ -68,7 +70,6 @@ export default async function CompanyPage({ params }: Props) {
 
         <div className="flex items-start justify-between mb-8">
           <div className="flex items-center gap-4">
-            {/* Logo da empresa */}
             <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center bg-white shadow-sm flex-shrink-0">
               {(company as any).logoUrl ? (
                 <img
@@ -96,7 +97,10 @@ export default async function CompanyPage({ params }: Props) {
             </div>
           </div>
 
-          <CreateSectorModal companyId={company.id} />
+          <div className="flex items-center gap-3">
+            <PdfDownloadButton companyId={company.id} companyName={company.name} />
+            <CreateSectorModal companyId={company.id} />
+          </div>
         </div>
 
         <CompanyTabs

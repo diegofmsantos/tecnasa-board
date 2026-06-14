@@ -7,17 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 1. O Usuário
+// 1. O Usuário (equipe interna Tecnasa)
 model User {
   id        String   @id @default(cuid())
+  clerkId   String   @unique // ID vindo do Clerk
   name      String
   email     String   @unique
-  password  String
+  role      String   @default("CONSULTOR") // ADMIN | CONSULTOR
   createdAt DateTime @default(now())
 
-  tasks        Task[]
-  deliverables Deliverable[]
-  comments     TaskComment[]
+  tasks         Task[]
+  deliverables  Deliverable[]
+  comments      TaskComment[]
+  notifications Notification[]
+  activityLogs  ActivityLog[]
+}
+
+// 2. Usuário Cliente (acesso ao portal)
+model ClientUser {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique // ID vindo do Clerk
+  name      String
+  email     String   @unique
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 // 2. A Empresa/Cliente
@@ -35,10 +49,11 @@ model Company {
   address      String?
   website      String?
   notes        String?
-  status       String  @default("EM_DIAGNOSTICO") 
+  status       String  @default("EM_DIAGNOSTICO") // EM_DIAGNOSTICO | EM_MAPEAMENTO | EM_IMPLEMENTACAO | EM_MANUTENCAO | CONCLUIDO | PAUSADO
 
   sectors      Sector[]
   deliverables Deliverable[]
+  clientUsers  ClientUser[]
 }
 
 // 3. O Setor
@@ -119,7 +134,48 @@ model Interaction {
   createdAt DateTime @default(now())
 }
 
-// 9. Entregáveis da Pasta do Cliente
+// 13. Histórico de Atividades
+model ActivityLog {
+  id          String   @id @default(cuid())
+  action      String // CREATED | UPDATED | DELETED | STATUS_CHANGED | COMMENTED
+  entity      String // TASK | PROCESS | SECTOR | COMPANY | DELIVERABLE | COMMENT
+  entityId    String?
+  description String
+  companyId   String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO | WARNING | DANGER
+  read      Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId    String?
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// 11. Tipos de entregável personalizáveis
+model DeliverableType {
+  id        String   @id @default(cuid())
+  label     String
+  color     String   @default("bg-gray-100 text-gray-700")
+  isDefault Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model Deliverable {
   id        String   @id @default(cuid())
   name      String

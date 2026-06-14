@@ -2,8 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@clerk/nextjs/server"
 
 export async function updateCompanyInfo(formData: FormData) {
   const companyId = formData.get("companyId") as string
@@ -11,6 +10,7 @@ export async function updateCompanyInfo(formData: FormData) {
 
   const data = {
     name: (formData.get("name") as string) || undefined,
+    logoUrl: (formData.get("logoUrl") as string) || null,
     cnpj: (formData.get("cnpj") as string) || null,
     segment: (formData.get("segment") as string) || null,
     contactName: (formData.get("contactName") as string) || null,
@@ -25,7 +25,6 @@ export async function updateCompanyInfo(formData: FormData) {
   revalidatePath(`/company/${companyId}`)
   return { success: true }
 }
-
 
 export async function updateCompanyStatus(companyId: string, status: string) {
   if (!companyId || !status) return { error: "Dados inválidos." }
@@ -44,8 +43,10 @@ export async function createDeliverable(formData: FormData) {
 
   if (!companyId || !name || !url) return { error: "Preencha os campos obrigatórios." }
 
-  const session = await getServerSession(authOptions)
-  const userId = (session?.user as any)?.id as string | undefined
+  const { userId: clerkId } = await auth()
+  const user = clerkId
+    ? await prisma.user.findUnique({ where: { clerkId } })
+    : null
 
   await prisma.deliverable.create({
     data: {
@@ -54,14 +55,13 @@ export async function createDeliverable(formData: FormData) {
       type: type || "OUTRO",
       url,
       notes: notes || null,
-      userId: userId ?? null,
+      userId: user?.id ?? null,
     }
   })
 
   revalidatePath(`/company/${companyId}`)
   return { success: true }
 }
-
 
 export async function deleteDeliverable(deliverableId: string, companyId: string) {
   await prisma.deliverable.delete({ where: { id: deliverableId } })

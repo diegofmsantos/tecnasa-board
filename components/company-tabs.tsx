@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, FolderOpen, Table2, BarChart3 } from "lucide-react"
+import { Building2, FolderOpen, Table2, BarChart3, CalendarDays } from "lucide-react"
 import { CompanyOverview } from "@/components/company-overview"
 import { CompanyDeliverables } from "@/components/company-deliverables"
 import { PlannerTable } from "@/components/planner-table"
 import { CompanyDashboardInline } from "@/components/company-dashboard-inline"
+import { TaskCalendar } from "./task-calendar"
 
-type Tab = "overview" | "deliverables" | "planning" | "report"
+type Tab = "overview" | "deliverables" | "planning" | "calendar" | "report"
 
 interface CompanyTabsProps {
   company: any
@@ -21,10 +22,11 @@ interface CompanyTabsProps {
 }
 
 const tabs = [
-  { id: "overview",      label: "Visão Geral",      icon: Building2   },
-  { id: "deliverables",  label: "Entregáveis",       icon: FolderOpen  },
-  { id: "planning",      label: "Planejamento",      icon: Table2      },
-  { id: "report",        label: "Relatório",         icon: BarChart3   },
+  { id: "overview", label: "Visão Geral", icon: Building2 },
+  { id: "deliverables", label: "Entregáveis", icon: FolderOpen },
+  { id: "planning", label: "Planejamento", icon: Table2 },
+  { id: "calendar", label: "Calendário", icon: CalendarDays },
+  { id: "report", label: "Relatório", icon: BarChart3 },
 ] as const
 
 export function CompanyTabs({ company, users, metrics }: CompanyTabsProps) {
@@ -41,11 +43,10 @@ export function CompanyTabs({ company, users, metrics }: CompanyTabsProps) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 p-5  text-sm font-medium transition-colors relative whitespace-nowrap ${
-                isActive
-                  ? "text-tecnasa-accent"
-                  : "text-white hover:text-tecnasa-accent"
-              }`}
+              className={`flex items-center gap-2 p-5  text-sm font-medium transition-colors relative whitespace-nowrap ${isActive
+                ? "text-tecnasa-accent"
+                : "text-white hover:text-tecnasa-accent"
+                }`}
             >
               <Icon className="h-4 w-4" />
               {tab.label}
@@ -75,6 +76,10 @@ export function CompanyTabs({ company, users, metrics }: CompanyTabsProps) {
           companyId={company.id}
           users={users}
         />
+      )}
+
+      {activeTab === "calendar" && (
+        <TaskCalendar sectors={company.sectors} />
       )}
 
       {activeTab === "report" && (

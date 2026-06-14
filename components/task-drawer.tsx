@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useTransition, useRef } from "react"
-import { getTaskWithComments, createTaskComment, deleteTaskComment } from "@/app/actions-comments"
+import { getTaskWithComments, createTaskComment, deleteTaskComment } from "@/app/actions-comments-clerk"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import {

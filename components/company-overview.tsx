@@ -6,7 +6,7 @@ import {
   Briefcase, FileText, Pencil, Check, X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { updateCompanyInfo } from "@/app/actions.company"
+import { updateCompanyInfo } from "@/app/actions.company-clerk"
 import { CompanyStatusSelector } from "./company-status-selector"
 
 interface Company {
