@@ -8,5 +8,18 @@ export default async function SettingsTeamPage() {
         select: { id: true, clerkId: true, name: true, email: true, role: true, createdAt: true },
     })
 
-    return <TeamManager users={users} />
+    // Busca as fotos no Clerk
+    const clerk = await clerkClient()
+    const usersWithPhoto = await Promise.all(
+        users.map(async (user) => {
+            try {
+                const clerkUser = await clerk.users.getUser(user.clerkId)
+                return { ...user, imageUrl: clerkUser.imageUrl ?? null }
+            } catch {
+                return { ...user, imageUrl: null }
+            }
+        })
+    )
+
+    return <TeamManager users={usersWithPhoto} />
 }

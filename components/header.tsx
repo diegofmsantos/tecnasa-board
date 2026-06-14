@@ -20,7 +20,7 @@ export async function Header() {
   return (
     <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-8 fixed top-0 right-0 left-64 z-10">
       <div>
-        <h2 className="text-sm text-text-soft font-medium">Bem-vindo de volta!</h2>
+        <h2 className="text-sm text-text-soft font-medium"></h2>
       </div>
 
       <div className="flex items-center gap-3">
@@ -37,8 +37,18 @@ export async function Header() {
           <p className="text-xs text-text-soft">{email}</p>
         </div>
 
-        <div className="w-10 h-10 rounded-full bg-tecnasa-primary text-white flex items-center justify-center font-bold shadow-sm">
-          {initial}
+        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 shadow-sm flex-shrink-0">
+          {user?.imageUrl ? (
+            <img
+              src={user.imageUrl}
+              alt={name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-tecnasa-primary text-white flex items-center justify-center font-bold">
+              {initial}
+            </div>
+          )}
         </div>
 
         <div className="h-8 w-px bg-gray-200" />

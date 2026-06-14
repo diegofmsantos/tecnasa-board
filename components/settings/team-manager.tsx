@@ -17,6 +17,7 @@ interface TeamMember {
     email: string
     role: string
     createdAt: Date
+    imageUrl?: string | null
 }
 
 const ROLE_CONFIG = {
@@ -188,8 +189,18 @@ export function TeamManager({ users: initial }: { users: TeamMember[] }) {
                                     <tr key={member.id} className={`border-b border-gray-50 hover:bg-gray-50/50 ${i === members.length - 1 ? "border-0" : ""}`}>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-tecnasa-primary text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-                                                    {member.name.charAt(0).toUpperCase()}
+                                                <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                                                    {member.imageUrl ? (
+                                                        <img
+                                                            src={member.imageUrl}
+                                                            alt={member.name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-tecnasa-primary text-white flex items-center justify-center font-bold text-sm">
+                                                            {member.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <p className="font-semibold text-dark-primary">{member.name}</p>
