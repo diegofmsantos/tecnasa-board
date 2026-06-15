@@ -21,6 +21,8 @@ model User {
   comments      TaskComment[]
   notifications Notification[]
   activityLogs  ActivityLog[]
+  transcripts   Transcript[]
+  diagnosticSessions DiagnosticSession[]
 }
 
 // 2. Usuário Cliente (acesso ao portal)
@@ -54,6 +56,8 @@ model Company {
   sectors      Sector[]
   deliverables Deliverable[]
   clientUsers  ClientUser[]
+  transcripts  Transcript[]
+  diagnosticSessions DiagnosticSession[]
 }
 
 // 3. O Setor
@@ -63,7 +67,8 @@ model Sector {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  processes Process[]
+  processes   Process[]
+  transcripts Transcript[]
 }
 
 // 4. O Processo
@@ -137,8 +142,8 @@ model Interaction {
 // 13. Histórico de Atividades
 model ActivityLog {
   id          String   @id @default(cuid())
-  action      String // CREATED | UPDATED | DELETED | STATUS_CHANGED | COMMENTED
-  entity      String // TASK | PROCESS | SECTOR | COMPANY | DELIVERABLE | COMMENT
+  action      String   // CREATED | UPDATED | DELETED | STATUS_CHANGED | COMMENTED
+  entity      String   // TASK | PROCESS | SECTOR | COMPANY | DELIVERABLE | COMMENT
   entityId    String?
   description String
   companyId   String?
@@ -175,7 +180,6 @@ model DeliverableType {
   order     Int      @default(0)
   createdAt DateTime @default(now())
 }
-
 model Deliverable {
   id        String   @id @default(cuid())
   name      String
@@ -187,4 +191,35 @@ model Deliverable {
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+}
+
+// 14. Transcrições de reuniões
+model Transcript {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sectorId  String?
+  sector    Sector?  @relation(fields: [sectorId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  sessions DiagnosticSession[]
+}
+
+// 15. Sessões de diagnóstico com IA
+model DiagnosticSession {
+  id        String   @id @default(cuid())
+  title     String
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  messages  Json     @default("[]")
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transcripts Transcript[]
 }
