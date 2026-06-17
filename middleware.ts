@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 const isPublicRoute = createRouteMatcher([
   "/login(.*)",
   "/sign-in(.*)",
+  "/api/google-calendar/(.*)",
 ])
 
 const isInternalRoute = createRouteMatcher([
@@ -13,6 +14,7 @@ const isInternalRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/crm(.*)",
   "/settings(.*)",
+  "/api/google-calendar/callback(.*)",
 ])
 
 const isPortalRoute = createRouteMatcher(["/portal(.*)"])

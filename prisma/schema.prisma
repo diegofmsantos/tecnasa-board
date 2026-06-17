@@ -20,7 +20,8 @@ model User {
   deliverables  Deliverable[]
   comments      TaskComment[]
   notifications Notification[]
-  activityLogs  ActivityLog[]
+  activityLogs       ActivityLog[]
+  integrations       UserIntegration[]
   transcripts   Transcript[]
   diagnosticSessions DiagnosticSession[]
 }
@@ -193,7 +194,21 @@ model Deliverable {
   createdAt DateTime @default(now())
 }
 
-// 14. Transcrições de reuniões
+// 16. Integrações de usuário (Google Calendar, etc.)
+model UserIntegration {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String   // "google"
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, provider])
+}
+
 model Transcript {
   id        String   @id @default(cuid())
   title     String

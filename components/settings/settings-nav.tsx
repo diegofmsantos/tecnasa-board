@@ -2,12 +2,13 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Users, UserCircle, Palette, Tag, Activity } from "lucide-react"
+import { Users, UserCircle, Palette, Tag, Activity, Link2 } from "lucide-react"
 
 const settingsNav = [
   { href: "/settings/clients",      label: "Clientes do Portal",   icon: Users      },
   { href: "/settings/profile",      label: "Meu Perfil",           icon: UserCircle },
   { href: "/settings/team",         label: "Equipe",               icon: Users      },
+  { href: "/settings/integrations", label: "Integrações",          icon: Link2      },
   { href: "/settings/appearance",   label: "Personalização",       icon: Palette    },
   { href: "/settings/deliverables", label: "Tipos de Entregável",  icon: Tag        },
   { href: "/settings/activity",     label: "Histórico",            icon: Activity   },

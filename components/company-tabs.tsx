@@ -15,23 +15,23 @@ interface CompanyTabsProps {
   company: any
   users: { id: string; name: string }[]
   metrics: {
-    totalTasks: number
-    doneCount: number
+    totalTasks:      number
+    doneCount:       number
     inProgressCount: number
-    todoCount: number
+    todoCount:       number
   }
-  transcripts: any[]
+  transcripts:        any[]
   diagnosticSessions: any[]
-  apiEnabled: boolean
+  apiEnabled:         boolean
 }
 
 const tabs = [
-  { id: "overview", label: "Visão Geral", icon: Building2 },
-  { id: "deliverables", label: "Entregáveis", icon: FolderOpen },
-  { id: "planning", label: "Planejamento", icon: Table2 },
-  { id: "calendar", label: "Calendário", icon: CalendarDays },
-  { id: "report", label: "Relatório", icon: BarChart3 },
-  { id: "diagnostic", label: "Diagnóstico IA", icon: Brain },
+  { id: "overview",    label: "Visão Geral",    icon: Building2    },
+  { id: "deliverables",label: "Entregáveis",    icon: FolderOpen   },
+  { id: "planning",    label: "Planejamento",   icon: Table2       },
+  { id: "calendar",    label: "Calendário",     icon: CalendarDays },
+  { id: "report",      label: "Relatório",      icon: BarChart3    },
+  { id: "diagnostic",  label: "Diagnóstico IA", icon: Brain        },
 ] as const
 
 export function CompanyTabs({
@@ -47,16 +47,17 @@ export function CompanyTabs({
       {/* Barra de Abas */}
       <div className="flex items-center pb-2 gap-1 border-b border-gray-200 bg-dark-primary mb-8 rounded-xl overflow-x-auto">
         {tabs.map((tab) => {
-          const Icon = tab.icon
+          const Icon     = tab.icon
           const isActive = activeTab === tab.id
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 p-5 text-sm font-medium transition-colors relative whitespace-nowrap flex-shrink-0 ${isActive
+              className={`flex items-center gap-2 p-5 text-sm font-medium transition-colors relative whitespace-nowrap flex-shrink-0 ${
+                isActive
                   ? "text-tecnasa-accent"
                   : "text-white hover:text-tecnasa-accent"
-                }`}
+              }`}
             >
               <Icon className="h-4 w-4" />
               {tab.label}
@@ -89,7 +90,11 @@ export function CompanyTabs({
       )}
 
       {activeTab === "calendar" && (
-        <TaskCalendar sectors={company.sectors} />
+        <TaskCalendar
+          companyId={company.id}
+          companyName={company.name}
+          sectors={company.sectors}
+        />
       )}
 
       {activeTab === "report" && (
