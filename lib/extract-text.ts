@@ -1,11 +1,5 @@
 import mammoth from "mammoth"
-import * as pdfParseModule from "pdf-parse"
-const pdfParse = (pdfParseModule as any).default ?? pdfParseModule
 
-/**
- * Extrai texto de arquivos .txt, .pdf ou .docx
- * Retorna o texto extraído ou lança um erro
- */
 export async function extractTextFromFile(file: File): Promise<string> {
     const buffer = Buffer.from(await file.arrayBuffer())
     const name = file.name.toLowerCase()
@@ -15,6 +9,9 @@ export async function extractTextFromFile(file: File): Promise<string> {
     }
 
     if (name.endsWith(".pdf")) {
+        // Importação dinâmica — garante que pdf-parse nunca vai para o bundle do cliente
+        const pdfParseModule = await import("pdf-parse")
+        const pdfParse = (pdfParseModule as any).default ?? pdfParseModule
         const data = await pdfParse(buffer)
         if (!data.text?.trim()) {
             throw new Error("Não foi possível extrair texto do PDF. O arquivo pode ser uma imagem escaneada.")
