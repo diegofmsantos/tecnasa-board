@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CreateCompanyModal } from "@/components/create-company-modal";
 import { COMPANY_STATUS_CONFIG } from "@/lib/company-status";
+import { ImportPlanningModal } from "@/components/import-planning-modal";
 
 export default async function Home() {
   const companies = await prisma.company.findMany({
@@ -26,7 +27,10 @@ export default async function Home() {
             <h1 className="text-2xl font-bold tracking-tight text-dark-primary">Empresas / Clientes</h1>
             <p className="text-text-soft text-sm">Gerencie os clientes e suas estruturas na Tecnasa.</p>
           </div>
-          <CreateCompanyModal />
+          <div className="flex items-center gap-3">
+            <ImportPlanningModal />
+            <CreateCompanyModal />
+          </div>
         </div>
 
         {companies.length === 0 ? (

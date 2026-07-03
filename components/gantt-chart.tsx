@@ -27,66 +27,44 @@ interface GanttChartProps {
 }
 
 function buildGanttData(sectors: Sector[]) {
-    const tasks: any[] = []
     const today = new Date()
     let numId = 1
-    const idMap: Record<string, number> = {}
 
-    sectors.forEach((sector) => {
-        // Só inclui setor se tiver ao menos um processo com tasks
-        const processesWithTasks = sector.processes.filter((p) => p.tasks.length > 0)
-        if (processesWithTasks.length === 0) return
+    // Achata todas as tasks de todos os setores/processos
+    const allTasks = sectors.flatMap((sector) =>
+        sector.processes.flatMap((process) =>
+            process.tasks.map((task) => ({ task, process, sector }))
+        )
+    )
 
-        const sectorNumId = numId++
-        idMap[sector.id] = sectorNumId
-        tasks.push({
-            id: sectorNumId,
-            text: sector.name,
-            type: "summary",
-            open: true,
-            start: today,
-            end: new Date(today.getTime() + 7 * 86400000),
-        })
-
-        processesWithTasks.forEach((process) => {
-            const processNumId = numId++
-            idMap[process.id] = processNumId
-            tasks.push({
-                id: processNumId,
-                text: process.title,
-                type: "summary",
-                open: true,
-                parent: sectorNumId,
-                start: today,
-                end: new Date(today.getTime() + 7 * 86400000),
-            })
-
-            process.tasks.forEach((task) => {
-                const taskNumId = numId++
-                idMap[task.id] = taskNumId
-                const start = task.startDate ? new Date(task.startDate) : today
-                const end = task.dueDate ? new Date(task.dueDate) : new Date(start.getTime() + 3 * 86400000)
-                const safeEnd = end <= start ? new Date(start.getTime() + 86400000) : end
-                const progress = task.status === "DONE" ? 100 : task.status === "IN_PROGRESS" ? 50 : 0
-                tasks.push({
-                    id: taskNumId,
-                    text: task.title || "Sem título",
-                    start,
-                    end: safeEnd,
-                    progress,
-                    parent: processNumId,
-                    type: "task",
-                })
-            })
-        })
+    // Ordena por data de início
+    allTasks.sort((a, b) => {
+        const dateA = a.task.startDate ? new Date(a.task.startDate).getTime() : 0
+        const dateB = b.task.startDate ? new Date(b.task.startDate).getTime() : 0
+        return dateA - dateB
     })
 
-    return tasks
+    return allTasks.map(({ task }) => {
+        const start = task.startDate ? new Date(task.startDate) : today
+        const end = task.dueDate ? new Date(task.dueDate) : new Date(start.getTime() + 3 * 86400000)
+        const safeEnd = end <= start ? new Date(start.getTime() + 86400000) : end
+        const progress = task.status === "DONE" ? 100 : task.status === "IN_PROGRESS" ? 50 : 0
+
+        return {
+            id: numId++,
+            text: task.title || "Sem título",
+            start,
+            end: safeEnd,
+            progress,
+            type: "task",
+        }
+    })
 }
 
 const scales = [
     { unit: "month", step: 1, format: "%M %Y" },
     { unit: "week", step: 1, format: "Sem %w" },
+    { unit: "day", step: 1, format: "%d" },
 ]
 
 export function GanttChart({ sectors }: GanttChartProps) {
@@ -130,7 +108,17 @@ export function GanttChart({ sectors }: GanttChartProps) {
     return (
         <div style={{ height: "600px", width: "100%" }}>
             <Willow>
-                <Gantt tasks={tasks} links={[]} scales={scales} readonly />
+                <Gantt
+                    tasks={tasks}
+                    links={[]}
+                    scales={scales}
+                    readonly
+                    columns={[
+                        { id: "text", header: "Atividade", width: 280, flexgrow: 1 },
+                        { id: "start", header: "Início", width: 100 },
+                        { id: "duration", header: "Duração", width: 100 },
+                    ]}
+                />
             </Willow>
         </div>
     )
