@@ -118,7 +118,7 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
                                     onClick={() => handleDeleteSector(sector.id)}
                                     className="flex items-center gap-2 bg-red-500/20 hover:bg-red-500/40 text-red-300 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
                                 >
-                                    <Trash2 className="h-4 w-4" /> Apagar Setor
+                                    <Trash2 className="h-4 w-4" /> Apagar Bloco
                                 </button>
                             </div>
                         </div>

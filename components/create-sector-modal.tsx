@@ -20,7 +20,7 @@ export function CreateSectorModal({ companyId }: { companyId: string }) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button className="bg-tecnasa-primary text-tecnasa-accent hover:bg-dark-primary transition-colors shadow-md">
-                    <Plus className="h-4 w-4 mr-2" /> Novo Setor
+                    <Plus className="h-4 w-4 mr-2" /> Novo Bloco
                 </Button>
             </DialogTrigger>
 
@@ -28,7 +28,7 @@ export function CreateSectorModal({ companyId }: { companyId: string }) {
                 <DialogHeader>
                     <DialogTitle className="text-dark-primary text-xl flex items-center gap-2">
                         <Network className="h-5 w-5 text-tecnasa-primary" />
-                        Adicionar Setor
+                        Adicionar Bloco
                     </DialogTitle>
                 </DialogHeader>
 
@@ -38,7 +38,7 @@ export function CreateSectorModal({ companyId }: { companyId: string }) {
 
                     <div className="grid gap-4 py-4">
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="name" className="text-text-main font-medium">Nome do Setor</Label>
+                            <Label htmlFor="name" className="text-text-main font-medium">Nome do Bloco</Label>
                             <Input
                                 id="name"
                                 name="name"
@@ -51,7 +51,7 @@ export function CreateSectorModal({ companyId }: { companyId: string }) {
 
                     <DialogFooter>
                         <Button type="submit" className="bg-tecnasa-accent text-dark-primary hover:bg-tecnasa-accent/90 font-bold">
-                            Salvar Setor
+                            Salvar Bloco
                         </Button>
                     </DialogFooter>
                 </form>
