@@ -75,7 +75,7 @@ export default async function Home() {
                         </div>
                       </div>
                       <p className="text-sm text-text-soft mt-2 font-medium">
-                        {company.sectors.length} setor(es) cadastrado(s)
+                        {company.sectors.length} bloco(s) cadastrado(s)
                       </p>
                     </CardHeader>
                     <CardFooter className="pt-2 text-xs text-text-soft border-t border-gray-100 mt-4">
