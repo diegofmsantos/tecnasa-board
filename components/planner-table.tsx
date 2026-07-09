@@ -13,7 +13,11 @@ const GanttChart = dynamic(
 
 export function PlannerTable({ sectors, companyId, users }: { sectors: any[], companyId: string, users: any[] }) {
     const [isPending, startTransition] = useTransition()
-    const [collapsedProcesses, setCollapsedProcesses] = useState<Record<string, boolean>>({})
+    const [collapsedProcesses, setCollapsedProcesses] = useState<Record<string, boolean>>(
+        () => Object.fromEntries(
+            sectors.flatMap(s => s.processes.map((p: { id: string }) => [p.id, true]))
+        )
+    )
     const [activeTab, setActiveTab] = useState<"TABLE" | "GANTT">("TABLE")
     const [openTaskId, setOpenTaskId] = useState<string | null>(null)
 
@@ -132,7 +136,7 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
                                     return (
                                         <div key={process.id} className="border border-gray-100 rounded-lg overflow-hidden shadow-sm transition-all">
                                             <div className={`bg-tecnasa-primary/10 px-4 py-2 flex items-center justify-between group/stage ${!isCollapsed ? 'border-b border-gray-100' : ''}`}>
-                                                <div className="flex items-center gap-2 w-full max-w-md">
+                                                <div className="flex items-center gap-2 flex-1 min-w-0">
                                                     <button onClick={() => toggleProcess(process.id)} className="p-1 hover:bg-tecnasa-primary/20 rounded">
                                                         {isCollapsed
                                                             ? <ChevronRight className="h-4 w-4 text-tecnasa-primary" />
@@ -143,7 +147,7 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
                                                         type="text"
                                                         defaultValue={process.title}
                                                         onBlur={(e) => handleProcessRename(process.id, e.target.value)}
-                                                        className="font-bold text-tecnasa-primary bg-transparent border-b border-transparent hover:border-tecnasa-primary/30 focus:border-tecnasa-primary outline-none w-full px-1 py-0.5"
+                                                        className="font-bold text-tecnasa-primary bg-transparent border-b border-transparent hover:border-tecnasa-primary/30 focus:border-tecnasa-primary outline-none w-full px-1 py-0.5 min-w-0"
                                                     />
                                                 </div>
                                                 <button

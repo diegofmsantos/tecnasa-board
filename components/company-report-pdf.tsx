@@ -1,6 +1,5 @@
 import {
-    Document, Page, Text, View, StyleSheet,
-    Font, Image,
+    Document, Page, Text, View, StyleSheet, Image
 } from "@react-pdf/renderer"
 
 // ─── Estilos ─────────────────────────────────────────────────────────────────
@@ -43,7 +42,7 @@ const styles = StyleSheet.create({
     reportDate: { color: "rgba(255,255,255,0.6)", fontSize: 9, marginTop: 3 },
 
     // Corpo
-    body: { paddingHorizontal: 36, paddingVertical: 24 },
+    body: { paddingHorizontal: 36, paddingVertical: 24, paddingBottom: 60, },
 
     // Status badge
     statusRow: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
@@ -126,15 +125,14 @@ const styles = StyleSheet.create({
 
     // Footer
     footer: {
-        position: "absolute",
-        bottom: 20,
-        left: 36,
-        right: 36,
-        flexDirection: "row",
-        justifyContent: "space-between",
         borderTopWidth: 1,
         borderTopColor: "#e5e7eb",
         paddingTop: 8,
+        paddingHorizontal: 36,
+        paddingBottom: 16,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginTop: "auto",
     },
     footerText: { fontSize: 8, color: "#9ca3af" },
 })
@@ -329,7 +327,7 @@ export function CompanyReportPDF({ company, generatedAt }: ReportProps) {
                                     const procPct = procTotal > 0 ? Math.round((procDone / procTotal) * 100) : 0
 
                                     return (
-                                        <View key={process.id}>
+                                        <View key={process.id} wrap={false}>
                                             <View style={styles.processRow}>
                                                 <Text style={styles.processTitle}>{process.title}</Text>
                                                 <View style={styles.processTrack}>
