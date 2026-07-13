@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Building2 } from "lucide-react";
 import { format } from "date-fns";
@@ -41,8 +42,7 @@ export default async function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {companies.map((company) => {
-              const statusKey = (company as any).status ?? "EM_DIAGNOSTICO"
-              const statusCfg = COMPANY_STATUS_CONFIG[statusKey] ?? COMPANY_STATUS_CONFIG.EM_DIAGNOSTICO
+              const statusCfg = COMPANY_STATUS_CONFIG[company.status] ?? COMPANY_STATUS_CONFIG.EM_DIAGNOSTICO
 
               return (
                 <Link href={`/company/${company.id}`} key={company.id}>
@@ -51,10 +51,13 @@ export default async function Home() {
                       <div className="flex items-center gap-3">
                         {/* Logo ou ícone padrão */}
                         <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 flex items-center justify-center bg-tecnasa-primary/10">
-                          {(company as any).logoUrl ? (
-                            <img
-                              src={(company as any).logoUrl}
+                          {company.logoUrl ? (
+                            <Image
+                              src={company.logoUrl}
                               alt={`Logo ${company.name}`}
+                              width={40}
+                              height={40}
+                              unoptimized
                               className="w-full h-full object-contain p-0.5"
                             />
                           ) : (

@@ -36,7 +36,7 @@ export function DeliverableTypesManager({ types: initial }: { types: Deliverable
 
         startTransition(async () => {
             const result = await createDeliverableType(form.label, form.color)
-            if (result.error) { setError(result.error); return }
+            if ("error" in result) { setError(result.error); return }
             setTypes((prev) => [
                 ...prev,
                 { id: crypto.randomUUID(), label: form.label, color: form.color, isDefault: false, order: prev.length + 1 },

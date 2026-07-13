@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Building2 } from "lucide-react"
 import { notFound } from "next/navigation"
@@ -97,10 +98,13 @@ export default async function CompanyPage({ params }: Props) {
         <div className="flex items-start justify-between mb-8">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center bg-white shadow-sm flex-shrink-0">
-              {(company as any).logoUrl ? (
-                <img
-                  src={(company as any).logoUrl}
+              {company.logoUrl ? (
+                <Image
+                  src={company.logoUrl}
                   alt={`Logo ${company.name}`}
+                  width={56}
+                  height={56}
+                  unoptimized
                   className="w-full h-full object-contain p-1"
                 />
               ) : (
@@ -117,8 +121,8 @@ export default async function CompanyPage({ params }: Props) {
               <h1 className="text-3xl font-bold tracking-tight text-dark-primary">
                 {company.name}
               </h1>
-              {(company as any).segment && (
-                <p className="text-text-soft text-sm mt-1">{(company as any).segment}</p>
+              {company.segment && (
+                <p className="text-text-soft text-sm mt-1">{company.segment}</p>
               )}
             </div>
           </div>
@@ -133,8 +137,8 @@ export default async function CompanyPage({ params }: Props) {
           company={company}
           users={users}
           metrics={{ totalTasks, doneCount, inProgressCount, todoCount }}
-          transcripts={transcripts as any}
-          diagnosticSessions={diagnosticSessions as any}
+          transcripts={transcripts}
+          diagnosticSessions={diagnosticSessions}
           apiEnabled={apiEnabled}
         />
       </main>

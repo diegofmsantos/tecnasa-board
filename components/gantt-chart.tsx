@@ -67,14 +67,16 @@ const scales = [
     { unit: "day", step: 1, format: "%d" },
 ]
 
+type GanttModule = typeof import("@svar-ui/react-gantt")
+
 export function GanttChart({ sectors }: GanttChartProps) {
     const [mounted, setMounted] = useState(false)
-    const [GanttLib, setGanttLib] = useState<{ Gantt: any; Willow: any } | null>(null)
+    const [GanttLib, setGanttLib] = useState<Pick<GanttModule, "Gantt" | "Willow"> | null>(null)
 
     useEffect(() => {
         Promise.all([
             import("@svar-ui/react-gantt"),
-            import("@svar-ui/react-gantt/all.css" as any),
+            import("@svar-ui/react-gantt/all.css"),
         ]).then(([mod]) => {
             setGanttLib({ Gantt: mod.Gantt, Willow: mod.Willow })
             setMounted(true)

@@ -2,7 +2,6 @@
 
 import { useTransition, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { useUser } from "@clerk/nextjs"
 import { disconnectGoogle } from "@/app/actions-google-calendar"
 import { Calendar, Check, Link2, Link2Off, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -19,7 +18,6 @@ export function IntegrationsManager({ googleConnected: initial, googleConnectedA
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState("")
   const searchParams = useSearchParams()
-  const { user } = useUser()
 
   useEffect(() => {
     const success = searchParams.get("success")
@@ -42,7 +40,7 @@ export function IntegrationsManager({ googleConnected: initial, googleConnectedA
     })
   }
 
-  const connectUrl = `/api/google-calendar/connect?uid=${user?.id ?? ""}`
+  const connectUrl = "/api/google-calendar/connect"
 
   return (
     <div>

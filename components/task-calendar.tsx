@@ -7,29 +7,32 @@ import interactionPlugin from "@fullcalendar/interaction"
 import ptBrLocale from "@fullcalendar/core/locales/pt-br"
 import { GoogleCalendarSyncButton } from "@/components/google-calendar-sync-button"
 
-interface Task {
+interface RawTask {
   id:       string
   title:    string
   status:   string
   dueDate?: Date | string | null
   startDate?: Date | string | null
+  user?: { name: string } | null
+}
+
+// RawTask enriquecido com a etapa/setor de origem, montado ao gerar os eventos do calendário
+interface Task extends RawTask {
   process: {
     title: string
     sector: { name: string }
   }
-  user?: { name: string } | null
 }
 
 interface Props {
-  companyId:   string
-  companyName: string
+  companyId: string
   sectors: Array<{
     id:   string
     name: string
     processes: Array<{
       id:    string
       title: string
-      tasks: Task[]
+      tasks: RawTask[]
     }>
   }>
 }
@@ -46,7 +49,7 @@ const STATUS_LABEL: Record<string, string> = {
   DONE:        "Concluído",
 }
 
-export function TaskCalendar({ companyId, companyName, sectors }: Props) {
+export function TaskCalendar({ companyId, sectors }: Props) {
   const [mounted, setMounted] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
@@ -57,20 +60,26 @@ export function TaskCalendar({ companyId, companyName, sectors }: Props) {
     sector.processes.flatMap((process) =>
       process.tasks
         .filter((task) => task.dueDate || task.startDate)
-        .map((task) => ({
-          id:               task.id,
-          title:            task.title,
-          start:            task.startDate
-                              ? new Date(task.startDate).toISOString().split("T")[0]
-                              : new Date(task.dueDate!).toISOString().split("T")[0],
-          end:              task.dueDate
-                              ? new Date(task.dueDate).toISOString().split("T")[0]
-                              : undefined,
-          backgroundColor:  STATUS_COLOR[task.status] ?? "#9ca3af",
-          borderColor:      STATUS_COLOR[task.status] ?? "#9ca3af",
-          textColor:        "#fff",
-          extendedProps:    { task, sector: sector.name },
-        }))
+        .map((task) => {
+          const taskWithProcess: Task = {
+            ...task,
+            process: { title: process.title, sector: { name: sector.name } },
+          }
+          return {
+            id:               task.id,
+            title:            task.title,
+            start:            task.startDate
+                                ? new Date(task.startDate).toISOString().split("T")[0]
+                                : new Date(task.dueDate!).toISOString().split("T")[0],
+            end:              task.dueDate
+                                ? new Date(task.dueDate).toISOString().split("T")[0]
+                                : undefined,
+            backgroundColor:  STATUS_COLOR[task.status] ?? "#9ca3af",
+            borderColor:      STATUS_COLOR[task.status] ?? "#9ca3af",
+            textColor:        "#fff",
+            extendedProps:    { task: taskWithProcess, sector: sector.name },
+          }
+        })
     )
   )
 
@@ -86,7 +95,7 @@ export function TaskCalendar({ companyId, companyName, sectors }: Props) {
     <div className="flex flex-col gap-4">
       {/* Header com botão de sincronizar */}
       <div className="flex justify-end">
-        <GoogleCalendarSyncButton companyId={companyId} companyName={companyName} />
+        <GoogleCalendarSyncButton companyId={companyId} />
       </div>
 
       <div className="flex gap-6">

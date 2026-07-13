@@ -2,23 +2,15 @@
 
 import { useState, useTransition } from "react"
 import { getActivityLogs } from "@/app/actions-activity"
+import type { ActivityEntity } from "@prisma/client"
 import {
   Activity, Plus, Trash2, RefreshCw,
-  MessageSquare, Edit, ToggleLeft, FolderOpen,
-  Building2, Filter,
+  MessageSquare, Edit, ToggleLeft, Filter,
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
-interface Log {
-  id:          string
-  action:      string
-  entity:      string
-  description: string
-  companyId:   string | null
-  createdAt:   Date
-  user:        { id: string; name: string } | null
-}
+type Log = Awaited<ReturnType<typeof getActivityLogs>>[number]
 
 interface Props {
   logs:      Log[]
@@ -57,10 +49,12 @@ function groupByDate(logs: Log[]) {
 export function ActivityLogView({ logs: initial, companies, users }: Props) {
   const [logs, setLogs] = useState(initial)
   const [isPending, startTransition] = useTransition()
-  const [filters, setFilters] = useState({ companyId: "", userId: "", entity: "" })
+  const [filters, setFilters] = useState<{ companyId: string; userId: string; entity: ActivityEntity | "" }>(
+    { companyId: "", userId: "", entity: "" }
+  )
 
   function handleFilter(key: string, value: string) {
-    const newFilters = { ...filters, [key]: value }
+    const newFilters = { ...filters, [key]: value } as typeof filters
     setFilters(newFilters)
 
     startTransition(async () => {
@@ -70,7 +64,7 @@ export function ActivityLogView({ logs: initial, companies, users }: Props) {
         entity:    newFilters.entity    || undefined,
         take:      100,
       })
-      setLogs(result as Log[])
+      setLogs(result)
     })
   }
 
@@ -136,7 +130,7 @@ export function ActivityLogView({ logs: initial, companies, users }: Props) {
               setFilters({ companyId: "", userId: "", entity: "" })
               startTransition(async () => {
                 const result = await getActivityLogs({ take: 100 })
-                setLogs(result as Log[])
+                setLogs(result)
               })
             }}
             className="text-xs text-red-500 hover:underline"

@@ -1,295 +1,470 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { logActivity } from "@/lib/log-activity"
+import { requireInternalUser, toActionError } from "@/lib/auth"
+import {
+  createCompanySchema,
+  createSectorSchema,
+  createProcessSchema,
+  createTaskSchema,
+  createLeadSchema,
+  addInteractionSchema,
+  taskStatusSchema,
+  leadStatusSchema,
+  formatZodError,
+} from "@/lib/validations"
 
 export async function createCompany(formData: FormData) {
-  const name = formData.get("name") as string
-  if (!name) return
+  try {
+    await requireInternalUser()
+    const parsed = createCompanySchema.safeParse({ name: formData.get("name") })
+    if (!parsed.success) return { error: formatZodError(parsed.error) }
 
-  const company = await prisma.company.create({ data: { name } })
+    const company = await prisma.$transaction(async (tx) => {
+      const company = await tx.company.create({ data: { name: parsed.data.name } })
+      await logActivity({
+        action: "CREATED",
+        entity: "COMPANY",
+        entityId: company.id,
+        description: `Empresa "${company.name}" cadastrada`,
+        companyId: company.id,
+      }, tx)
+      return company
+    })
 
-  await logActivity({
-    action: "CREATED",
-    entity: "COMPANY",
-    entityId: company.id,
-    description: `Empresa "${company.name}" cadastrada`,
-    companyId: company.id,
-  })
-
-  revalidatePath("/")
+    revalidatePath("/")
+    return { success: true, company }
+  } catch (err) {
+    return toActionError(err, "Erro ao cadastrar empresa.")
+  }
 }
 
 // 1. Criar Setor
 export async function createSector(formData: FormData) {
-  const name = formData.get("name") as string
-  const companyId = formData.get("companyId") as string
-  if (!name || !companyId) return
+  try {
+    await requireInternalUser()
+    const parsed = createSectorSchema.safeParse({
+      name: formData.get("name"),
+      companyId: formData.get("companyId"),
+    })
+    if (!parsed.success) return { error: formatZodError(parsed.error) }
+    const { name, companyId } = parsed.data
 
-  const sector = await prisma.sector.create({ data: { name, companyId } })
+    await prisma.$transaction(async (tx) => {
+      const sector = await tx.sector.create({ data: { name, companyId } })
+      await logActivity({
+        action: "CREATED",
+        entity: "SECTOR",
+        entityId: sector.id,
+        description: `Setor "${sector.name}" criado`,
+        companyId,
+      }, tx)
+    })
 
-  await logActivity({
-    action: "CREATED",
-    entity: "SECTOR",
-    entityId: sector.id,
-    description: `Setor "${sector.name}" criado`,
-    companyId,
-  })
-
-  revalidatePath(`/company/${companyId}`)
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao criar setor.")
+  }
 }
 
 export async function deletePlannerSector(sectorId: string, companyId: string) {
-  const sector = await prisma.sector.findUnique({ where: { id: sectorId } })
+  try {
+    await requireInternalUser()
 
-  await prisma.sector.delete({ where: { id: sectorId } })
+    await prisma.$transaction(async (tx) => {
+      const sector = await tx.sector.findUnique({ where: { id: sectorId } })
+      await tx.sector.delete({ where: { id: sectorId } })
+      await logActivity({
+        action: "DELETED",
+        entity: "SECTOR",
+        entityId: sectorId,
+        description: `Setor "${sector?.name ?? sectorId}" removido`,
+        companyId,
+      }, tx)
+    })
 
-  await logActivity({
-    action: "DELETED",
-    entity: "SECTOR",
-    entityId: sectorId,
-    description: `Setor "${sector?.name ?? sectorId}" removido`,
-    companyId,
-  })
-
-  revalidatePath(`/company/${companyId}`)
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao remover setor.")
+  }
 }
 
 // 2. Criar Processo
 export async function createProcess(formData: FormData) {
-  const title = formData.get("title") as string
-  const description = formData.get("description") as string
-  const sectorId = formData.get("sectorId") as string
-  if (!title || !sectorId) return
+  try {
+    await requireInternalUser()
+    const parsed = createProcessSchema.safeParse({
+      title: formData.get("title"),
+      description: formData.get("description"),
+      sectorId: formData.get("sectorId"),
+    })
+    if (!parsed.success) return { error: formatZodError(parsed.error) }
+    const { title, description, sectorId } = parsed.data
 
-  await prisma.process.create({ data: { title, description, sectorId } })
-  revalidatePath(`/sector/${sectorId}`)
+    await prisma.process.create({ data: { title, description, sectorId } })
+    revalidatePath(`/sector/${sectorId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao criar processo.")
+  }
 }
 
 // Criar Tarefa
 export async function createTask(formData: FormData) {
-  const title = formData.get("title") as string
-  const description = formData.get("description") as string
-  const processId = formData.get("processId") as string
-  const userId = formData.get("userId") as string
-  const priority = formData.get("priority") as string
-  const dueDate = formData.get("dueDate") as string
-  if (!title || !processId) return
+  try {
+    await requireInternalUser()
+    const parsed = createTaskSchema.safeParse({
+      title: formData.get("title"),
+      description: formData.get("description"),
+      processId: formData.get("processId"),
+      userId: formData.get("userId"),
+      priority: formData.get("priority") || undefined,
+      dueDate: formData.get("dueDate"),
+    })
+    if (!parsed.success) return { error: formatZodError(parsed.error) }
+    const { title, description, processId, userId, priority, dueDate } = parsed.data
 
-  await prisma.task.create({
-    data: {
-      title,
-      description,
-      processId,
-      priority: priority || "MEDIUM",
-      dueDate: dueDate ? new Date(dueDate) : null,
-      userId: userId !== "unassigned" ? userId : null,
-    }
-  })
+    await prisma.task.create({
+      data: {
+        title,
+        description,
+        processId,
+        priority: priority ?? "MEDIUM",
+        dueDate: dueDate ? new Date(dueDate) : null,
+        userId: userId && userId !== "unassigned" ? userId : null,
+      }
+    })
 
-  revalidatePath(`/process/${processId}`)
-}
-
-// Atualizar Status da Tarefa
-export async function updateTaskStatus(taskId: string, newStatus: string, processId: string) {
-  await prisma.task.update({ where: { id: taskId }, data: { status: newStatus } })
-  revalidatePath(`/process/${processId}`)
+    revalidatePath(`/process/${processId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao criar tarefa.")
+  }
 }
 
 // Deletar Tarefa
 export async function deleteTask(taskId: string, processId: string) {
-  await prisma.task.delete({ where: { id: taskId } })
-  revalidatePath(`/process/${processId}`)
+  try {
+    await requireInternalUser()
+    await prisma.task.delete({ where: { id: taskId } })
+    revalidatePath(`/process/${processId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao remover tarefa.")
+  }
 }
+
+const INLINE_FIELDS = new Set([
+  "title", "description", "status", "priority", "startDate", "dueDate", "notes", "driveLink", "userId",
+])
 
 // Atualização inline das células do Planner
 export async function updateTaskInline(taskId: string, field: string, value: string | null, companyId: string) {
-  let dataValue: any = value
-  if ((field === "startDate" || field === "dueDate") && value) {
-    dataValue = new Date(value)
-  }
+  try {
+    await requireInternalUser()
+    if (!INLINE_FIELDS.has(field)) return { error: "Campo inválido." }
 
-  const task = await prisma.task.update({
-    where: { id: taskId },
-    data: { [field]: dataValue },
-  })
-
-  // Loga apenas mudança de status (evita log a cada keystroke)
-  if (field === "status") {
-    const statusLabel: Record<string, string> = {
-      TODO: "Novo",
-      IN_PROGRESS: "Em Andamento",
-      DONE: "Concluído",
+    let dataValue: string | Date | null = value
+    if ((field === "startDate" || field === "dueDate") && value) {
+      dataValue = new Date(value)
     }
-    await logActivity({
-      action: "STATUS_CHANGED",
-      entity: "TASK",
-      entityId: taskId,
-      description: `Status de "${task.title}" alterado para ${statusLabel[value ?? ""] ?? value}`,
-      companyId,
-    })
-  }
+    if (field === "status" && value) {
+      dataValue = taskStatusSchema.parse(value)
+    }
 
-  revalidatePath(`/company/${companyId}`)
+    // Campo dinâmico, restrito à allowlist INLINE_FIELDS acima — não há um
+    // tipo de update estático possível aqui, por isso o cast pontual.
+    const updateData = { [field]: dataValue } as Prisma.TaskUpdateInput
+
+    const task = await prisma.$transaction(async (tx) => {
+      const task = await tx.task.update({
+        where: { id: taskId },
+        data: updateData,
+      })
+
+      // Loga apenas mudança de status (evita log a cada keystroke)
+      if (field === "status") {
+        const statusLabel: Record<string, string> = {
+          TODO: "Novo",
+          IN_PROGRESS: "Em Andamento",
+          DONE: "Concluído",
+        }
+        await logActivity({
+          action: "STATUS_CHANGED",
+          entity: "TASK",
+          entityId: taskId,
+          description: `Status de "${task.title}" alterado para ${statusLabel[value ?? ""] ?? value}`,
+          companyId,
+        }, tx)
+      }
+
+      return task
+    })
+
+    revalidatePath(`/company/${companyId}`)
+    return { success: true, task }
+  } catch (err) {
+    return toActionError(err, "Erro ao atualizar tarefa.")
+  }
 }
 
 // 1. Apagar uma Atividade da Tabela
 export async function deletePlannerTask(taskId: string, companyId: string) {
-  const task = await prisma.task.findUnique({ where: { id: taskId } })
+  try {
+    await requireInternalUser()
 
-  await prisma.task.delete({ where: { id: taskId } })
+    await prisma.$transaction(async (tx) => {
+      const task = await tx.task.findUnique({ where: { id: taskId } })
+      await tx.task.delete({ where: { id: taskId } })
+      await logActivity({
+        action: "DELETED",
+        entity: "TASK",
+        entityId: taskId,
+        description: `Tarefa "${task?.title ?? taskId}" removida`,
+        companyId,
+      }, tx)
+    })
 
-  await logActivity({
-    action: "DELETED",
-    entity: "TASK",
-    entityId: taskId,
-    description: `Tarefa "${task?.title ?? taskId}" removida`,
-    companyId,
-  })
-
-  revalidatePath(`/company/${companyId}`)
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao remover tarefa.")
+  }
 }
 
 // 2. Renomear Setor
 export async function updateSectorName(sectorId: string, newName: string, companyId: string) {
-  if (!newName) return
-  await prisma.sector.update({ where: { id: sectorId }, data: { name: newName } })
+  try {
+    await requireInternalUser()
+    const name = newName?.trim()
+    if (!name) return { error: "Nome não pode ficar vazio." }
 
-  await logActivity({
-    action: "UPDATED",
-    entity: "SECTOR",
-    entityId: sectorId,
-    description: `Setor renomeado para "${newName}"`,
-    companyId,
-  })
+    await prisma.$transaction(async (tx) => {
+      await tx.sector.update({ where: { id: sectorId }, data: { name } })
+      await logActivity({
+        action: "UPDATED",
+        entity: "SECTOR",
+        entityId: sectorId,
+        description: `Setor renomeado para "${name}"`,
+        companyId,
+      }, tx)
+    })
 
-  revalidatePath(`/company/${companyId}`)
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao renomear setor.")
+  }
 }
 
 // 3. Criar Nova Etapa (Processo) vazia
 export async function createPlannerProcess(sectorId: string, companyId: string) {
-  const process = await prisma.process.create({
-    data: { title: "Nova Etapa (Renomeie)", sectorId }
-  })
+  try {
+    await requireInternalUser()
 
-  await logActivity({
-    action: "CREATED",
-    entity: "PROCESS",
-    entityId: process.id,
-    description: `Etapa "${process.title}" criada`,
-    companyId,
-  })
+    await prisma.$transaction(async (tx) => {
+      const process = await tx.process.create({
+        data: { title: "Nova Etapa (Renomeie)", sectorId }
+      })
+      await logActivity({
+        action: "CREATED",
+        entity: "PROCESS",
+        entityId: process.id,
+        description: `Etapa "${process.title}" criada`,
+        companyId,
+      }, tx)
+    })
 
-  revalidatePath(`/company/${companyId}`)
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao criar etapa.")
+  }
 }
 
 // 4. Criar Nova Atividade vazia na Tabela
 export async function createPlannerTask(processId: string, companyId: string) {
-  const task = await prisma.task.create({
-    data: { title: "Nova Atividade...", processId, status: "TODO" }
-  })
+  try {
+    await requireInternalUser()
 
-  await logActivity({
-    action: "CREATED",
-    entity: "TASK",
-    entityId: task.id,
-    description: `Tarefa "${task.title}" criada`,
-    companyId,
-  })
+    await prisma.$transaction(async (tx) => {
+      const task = await tx.task.create({
+        data: { title: "Nova Atividade...", processId, status: "TODO" }
+      })
+      await logActivity({
+        action: "CREATED",
+        entity: "TASK",
+        entityId: task.id,
+        description: `Tarefa "${task.title}" criada`,
+        companyId,
+      }, tx)
+    })
 
-  revalidatePath(`/company/${companyId}`)
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao criar atividade.")
+  }
 }
 
 // 5. Renomear Etapa (Processo)
 export async function updateProcessName(processId: string, newTitle: string, companyId: string) {
-  if (!newTitle) return
-  await prisma.process.update({ where: { id: processId }, data: { title: newTitle } })
+  try {
+    await requireInternalUser()
+    const title = newTitle?.trim()
+    if (!title) return { error: "Título não pode ficar vazio." }
 
-  await logActivity({
-    action: "UPDATED",
-    entity: "PROCESS",
-    entityId: processId,
-    description: `Etapa renomeada para "${newTitle}"`,
-    companyId,
-  })
+    await prisma.$transaction(async (tx) => {
+      await tx.process.update({ where: { id: processId }, data: { title } })
+      await logActivity({
+        action: "UPDATED",
+        entity: "PROCESS",
+        entityId: processId,
+        description: `Etapa renomeada para "${title}"`,
+        companyId,
+      }, tx)
+    })
 
-  revalidatePath(`/company/${companyId}`)
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao renomear etapa.")
+  }
 }
 
 // 6. Excluir Etapa inteira
 export async function deletePlannerProcess(processId: string, companyId: string) {
-  const process = await prisma.process.findUnique({ where: { id: processId } })
+  try {
+    await requireInternalUser()
 
-  await prisma.process.delete({ where: { id: processId } })
+    await prisma.$transaction(async (tx) => {
+      const process = await tx.process.findUnique({ where: { id: processId } })
+      await tx.process.delete({ where: { id: processId } })
+      await logActivity({
+        action: "DELETED",
+        entity: "PROCESS",
+        entityId: processId,
+        description: `Etapa "${process?.title ?? processId}" removida`,
+        companyId,
+      }, tx)
+    })
 
-  await logActivity({
-    action: "DELETED",
-    entity: "PROCESS",
-    entityId: processId,
-    description: `Etapa "${process?.title ?? processId}" removida`,
-    companyId,
-  })
-
-  revalidatePath(`/company/${companyId}`)
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao remover etapa.")
+  }
 }
 
 // --- MÓDULO CRM ---
 
 export async function createLead(formData: FormData) {
-  const name = formData.get("name") as string
-  const cnpj = formData.get("cnpj") as string
-  const contactRole = formData.get("contactRole") as string
-  const segment = formData.get("segment") as string
-  const address = formData.get("address") as string
-  if (!name) return
+  try {
+    await requireInternalUser()
+    const parsed = createLeadSchema.safeParse({
+      name: formData.get("name"),
+      cnpj: formData.get("cnpj"),
+      contactRole: formData.get("contactRole"),
+      segment: formData.get("segment"),
+      address: formData.get("address"),
+    })
+    if (!parsed.success) return { error: formatZodError(parsed.error) }
+    const { name, cnpj, contactRole, segment, address } = parsed.data
 
-  const lead = await prisma.lead.create({
-    data: { name, cnpj, contactRole, segment, address, status: "LEADS" }
-  })
+    await prisma.$transaction(async (tx) => {
+      const lead = await tx.lead.create({
+        data: { name, cnpj, contactRole, segment, address, status: "LEADS" }
+      })
+      await logActivity({
+        action: "CREATED",
+        entity: "COMPANY",
+        entityId: lead.id,
+        description: `Prospecto "${lead.name}" adicionado ao CRM`,
+      }, tx)
+    })
 
-  await logActivity({
-    action: "CREATED",
-    entity: "COMPANY",
-    entityId: lead.id,
-    description: `Prospecto "${lead.name}" adicionado ao CRM`,
-  })
-
-  revalidatePath("/crm")
+    revalidatePath("/crm")
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao adicionar prospecto.")
+  }
 }
 
 export async function addInteraction(formData: FormData) {
-  const leadId = formData.get("leadId") as string
-  const content = formData.get("content") as string
-  if (!leadId || !content) return
+  try {
+    await requireInternalUser()
+    const parsed = addInteractionSchema.safeParse({
+      leadId: formData.get("leadId"),
+      content: formData.get("content"),
+    })
+    if (!parsed.success) return { error: formatZodError(parsed.error) }
+    const { leadId, content } = parsed.data
 
-  await prisma.interaction.create({ data: { leadId, content } })
-  revalidatePath(`/crm/${leadId}`)
+    await prisma.interaction.create({ data: { leadId, content } })
+    revalidatePath(`/crm/${leadId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao registrar interação.")
+  }
 }
 
 export async function updateLeadStatus(leadId: string, newStatus: string) {
-  await prisma.lead.update({ where: { id: leadId }, data: { status: newStatus } })
-  revalidatePath("/crm")
+  try {
+    await requireInternalUser()
+    const parsed = leadStatusSchema.safeParse(newStatus)
+    if (!parsed.success) return { error: "Status inválido." }
+
+    await prisma.lead.update({ where: { id: leadId }, data: { status: parsed.data } })
+    revalidatePath("/crm")
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao mover prospecto.")
+  }
 }
 
 export async function convertLeadToCompany(leadId: string, companyName: string) {
-  const company = await prisma.company.create({ data: { name: companyName } })
+  const result = await (async () => {
+    try {
+      await requireInternalUser()
+      const name = companyName?.trim()
+      if (!name) return { ok: false as const, error: "Nome da empresa é obrigatório." }
 
-  await prisma.lead.update({ where: { id: leadId }, data: { status: "GANHO" } })
+      const companyId = await prisma.$transaction(async (tx) => {
+        const company = await tx.company.create({ data: { name } })
+        await tx.lead.update({ where: { id: leadId }, data: { status: "GANHO" } })
+        await logActivity({
+          action: "CREATED",
+          entity: "COMPANY",
+          entityId: company.id,
+          description: `Lead "${name}" convertido em cliente`,
+          companyId: company.id,
+        }, tx)
+        return company.id
+      })
 
-  await logActivity({
-    action: "CREATED",
-    entity: "COMPANY",
-    entityId: company.id,
-    description: `Lead "${companyName}" convertido em cliente`,
-    companyId: company.id,
-  })
+      return { ok: true as const, companyId }
+    } catch (err) {
+      return { ok: false as const, error: toActionError(err, "Erro ao converter prospecto.").error }
+    }
+  })()
 
-  redirect(`/company/${company.id}`)
+  if (!result.ok) return { error: result.error }
+  redirect(`/company/${result.companyId}`)
 }
 
 export async function deleteLead(leadId: string) {
-  await prisma.lead.delete({ where: { id: leadId } })
-  revalidatePath("/crm")
+  try {
+    await requireInternalUser()
+    await prisma.lead.delete({ where: { id: leadId } })
+    revalidatePath("/crm")
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao remover prospecto.")
+  }
 }

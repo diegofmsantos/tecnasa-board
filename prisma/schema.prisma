@@ -7,13 +7,74 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  CONSULTOR
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum CompanyStatus {
+  EM_DIAGNOSTICO
+  EM_MAPEAMENTO
+  EM_IMPLEMENTACAO
+  EM_MANUTENCAO
+  CONCLUIDO
+  PAUSADO
+}
+
+// PROSPECT e LEADS representam a mesma coluna ("Leads") no funil do CRM —
+// mantidos os dois para não quebrar leads já persistidos com PROSPECT.
+enum LeadStatus {
+  PROSPECT
+  LEADS
+  DIAGNOSTICO
+  PROPOSTA
+  FECHAMENTO
+  GANHO
+  PERDIDO
+}
+
+enum ActivityAction {
+  CREATED
+  UPDATED
+  DELETED
+  STATUS_CHANGED
+  COMMENTED
+}
+
+enum ActivityEntity {
+  TASK
+  PROCESS
+  SECTOR
+  COMPANY
+  DELIVERABLE
+  COMMENT
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  DANGER
+}
+
 // 1. O Usuário (equipe interna Tecnasa)
 model User {
   id        String   @id @default(cuid())
   clerkId   String   @unique // ID vindo do Clerk
   name      String
   email     String   @unique
-  role      String   @default("CONSULTOR") // ADMIN | CONSULTOR
+  role      Role     @default(CONSULTOR)
   createdAt DateTime @default(now())
 
   tasks         Task[]
@@ -52,7 +113,7 @@ model Company {
   address      String?
   website      String?
   notes        String?
-  status       String  @default("EM_DIAGNOSTICO") // EM_DIAGNOSTICO | EM_MAPEAMENTO | EM_IMPLEMENTACAO | EM_MANUTENCAO | CONCLUIDO | PAUSADO
+  status       CompanyStatus @default(EM_DIAGNOSTICO)
 
   sectors      Sector[]
   deliverables Deliverable[]
@@ -89,8 +150,8 @@ model Task {
   id          String  @id @default(cuid())
   title       String
   description String?
-  status      String  @default("TODO")
-  priority    String  @default("MEDIUM")
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
 
   startDate DateTime?
   dueDate   DateTime?
@@ -125,7 +186,7 @@ model Lead {
   contactRole String?
   segment     String?
   address     String?
-  status      String   @default("PROSPECT")
+  status      LeadStatus @default(PROSPECT)
   createdAt   DateTime @default(now())
 
   interactions Interaction[]
@@ -142,9 +203,9 @@ model Interaction {
 
 // 13. Histórico de Atividades
 model ActivityLog {
-  id          String   @id @default(cuid())
-  action      String   // CREATED | UPDATED | DELETED | STATUS_CHANGED | COMMENTED
-  entity      String   // TASK | PROCESS | SECTOR | COMPANY | DELIVERABLE | COMMENT
+  id          String         @id @default(cuid())
+  action      ActivityAction
+  entity      ActivityEntity
   entityId    String?
   description String
   companyId   String?
@@ -157,7 +218,7 @@ model Notification {
   id        String   @id @default(cuid())
   title     String
   message   String
-  type      String   @default("INFO") // INFO | WARNING | DANGER
+  type      NotificationType @default(INFO)
   read      Boolean  @default(false)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

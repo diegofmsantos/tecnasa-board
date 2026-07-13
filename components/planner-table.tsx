@@ -4,6 +4,7 @@ import { updateTaskInline, deletePlannerTask, updateSectorName, createPlannerPro
 import { useTransition, useState } from "react"
 import { ExternalLink, Trash2, Plus, ChevronDown, ChevronRight, Table2, CalendarRange, MessageSquare } from "lucide-react"
 import { TaskDrawer } from "@/components/task-drawer"
+import type { SectorWithPlanner } from "@/types/company"
 import dynamic from "next/dynamic"
 
 const GanttChart = dynamic(
@@ -11,11 +12,17 @@ const GanttChart = dynamic(
     { ssr: false }
 )
 
-export function PlannerTable({ sectors, companyId, users }: { sectors: any[], companyId: string, users: any[] }) {
+interface PlannerTableProps {
+    sectors: SectorWithPlanner[]
+    companyId: string
+    users: { id: string; name: string }[]
+}
+
+export function PlannerTable({ sectors, companyId, users }: PlannerTableProps) {
     const [isPending, startTransition] = useTransition()
     const [collapsedProcesses, setCollapsedProcesses] = useState<Record<string, boolean>>(
         () => Object.fromEntries(
-            sectors.flatMap(s => s.processes.map((p: { id: string }) => [p.id, true]))
+            sectors.flatMap(s => s.processes.map((p) => [p.id, true]))
         )
     )
     const [activeTab, setActiveTab] = useState<"TABLE" | "GANTT">("TABLE")
@@ -99,7 +106,7 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
                 )}
 
                 {/* VISÃO TABELA */}
-                {activeTab === "TABLE" && sectors.map((sector: any) => (
+                {activeTab === "TABLE" && sectors.map((sector) => (
                     <div key={sector.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
                         <div className="bg-dark-primary text-white px-6 py-4 flex justify-between items-center">
@@ -131,7 +138,7 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
                             {sector.processes.length === 0 ? (
                                 <p className="text-text-soft text-sm italic py-4">Nenhuma etapa criada.</p>
                             ) : (
-                                sector.processes.map((process: any) => {
+                                sector.processes.map((process) => {
                                     const isCollapsed = collapsedProcesses[process.id]
                                     return (
                                         <div key={process.id} className="border border-gray-100 rounded-lg overflow-hidden shadow-sm transition-all">
@@ -181,7 +188,7 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
                                                                         <td colSpan={9} className="px-4 py-3 text-center text-gray-400 italic">Sem atividades.</td>
                                                                     </tr>
                                                                 ) : (
-                                                                    process.tasks.map((task: any) => (
+                                                                    process.tasks.map((task) => (
                                                                         <tr key={task.id} className="border-b border-gray-50 hover:bg-gray-50/50 group">
                                                                             <td className="px-4 py-2 border-r border-gray-100">
                                                                                 <div className="flex items-center gap-2">
@@ -218,7 +225,7 @@ export function PlannerTable({ sectors, companyId, users }: { sectors: any[], co
                                                                                     className="w-full p-1.5 rounded-md text-xs hover:border-gray-200 outline-none bg-transparent"
                                                                                 >
                                                                                     <option value="">Sem responsável</option>
-                                                                                    {users.map((u: any) => (
+                                                                                    {users.map((u) => (
                                                                                         <option key={u.id} value={u.id}>{u.name}</option>
                                                                                     ))}
                                                                                 </select>

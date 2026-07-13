@@ -26,6 +26,11 @@ export default async function LeadPage({ params }: Props) {
         await convertLeadToCompany(lead.id, lead.name)
     }
 
+    const submitInteraction = async (formData: FormData) => {
+        "use server"
+        await addInteraction(formData)
+    }
+
     return (
         <div className="min-h-screen bg-neutral-bg text-text-main flex flex-col">
             <Sidebar />
@@ -75,7 +80,7 @@ export default async function LeadPage({ params }: Props) {
                         </h3>
 
                         {/* FORMULÁRIO DE NOVA NOTA */}
-                        <form action={addInteraction} className="mb-8 flex gap-2">
+                        <form action={submitInteraction} className="mb-8 flex gap-2">
                             <input type="hidden" name="leadId" value={lead.id} />
                             <input
                                 type="text"

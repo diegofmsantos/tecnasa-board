@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { google } from "googleapis"
+import { auth } from "@clerk/nextjs/server"
 
 export async function GET(req: NextRequest) {
-  // O clerkId vem como query param da página de integrações
-  const clerkId = req.nextUrl.searchParams.get("uid")
+  // O clerkId vem da sessão autenticada — nunca de um parâmetro vindo do
+  // cliente, senão qualquer usuário logado poderia linkar sua própria conta
+  // Google à integração de outro usuário só editando a URL.
+  const { userId: clerkId } = await auth()
 
   if (!clerkId) {
-    return NextResponse.redirect(
-      new URL("/settings/integrations?error=no_user", req.url)
-    )
+    return NextResponse.redirect(new URL("/login", req.url))
   }
 
   const oauth2Client = new google.auth.OAuth2(
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
     access_type: "offline",
     scope: ["https://www.googleapis.com/auth/calendar.events"],
     prompt: "consent",
-    state: clerkId, 
+    state: clerkId,
   })
 
   return NextResponse.redirect(url)

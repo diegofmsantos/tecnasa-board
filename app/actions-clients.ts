@@ -3,16 +3,8 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { clerkClient } from "@clerk/nextjs/server"
-
-/**
- * Busca todos os clientes do portal com suas empresas vinculadas
- */
-export async function getClientUsers() {
-    return prisma.clientUser.findMany({
-        orderBy: { createdAt: "desc" },
-        include: { company: { select: { id: true, name: true } } },
-    })
-}
+import { requireAdmin, toActionError } from "@/lib/auth"
+import { createClientUserSchema, formatZodError } from "@/lib/validations"
 
 /**
  * Cria um novo usuário cliente:
@@ -21,16 +13,17 @@ export async function getClientUsers() {
  * 3. Salva no banco vinculado à empresa
  */
 export async function createClientUser(formData: FormData) {
-    const name = formData.get("name") as string
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    const companyId = formData.get("companyId") as string
-
-    if (!name || !email || !password || !companyId) {
-        return { error: "Preencha todos os campos." }
-    }
-
     try {
+        await requireAdmin()
+        const parsed = createClientUserSchema.safeParse({
+            name: formData.get("name"),
+            email: formData.get("email"),
+            password: formData.get("password"),
+            companyId: formData.get("companyId"),
+        })
+        if (!parsed.success) return { error: formatZodError(parsed.error) }
+        const { name, email, password, companyId } = parsed.data
+
         const clerk = await clerkClient()
 
         // 1. Cria o usuário no Clerk
@@ -54,10 +47,8 @@ export async function createClientUser(formData: FormData) {
 
         revalidatePath("/settings/clients")
         return { success: true }
-    } catch (err: any) {
-        // Trata erros do Clerk (ex: e-mail já existe)
-        const msg = err?.errors?.[0]?.longMessage ?? err?.message ?? "Erro ao criar usuário."
-        return { error: msg }
+    } catch (err: unknown) {
+        return toActionError(err, "Erro ao criar usuário.")
     }
 }
 
@@ -68,15 +59,21 @@ export async function createClientUser(formData: FormData) {
  */
 export async function deleteClientUser(clientUserId: string, clerkId: string) {
     try {
-        const clerk = await clerkClient()
-        await clerk.users.deleteUser(clerkId)
-    } catch {
-        // Se já não existe no Clerk, continua e remove do banco
-    }
+        await requireAdmin()
 
-    await prisma.clientUser.delete({ where: { id: clientUserId } })
-    revalidatePath("/settings/clients")
-    return { success: true }
+        try {
+            const clerk = await clerkClient()
+            await clerk.users.deleteUser(clerkId)
+        } catch {
+            // Se já não existe no Clerk, continua e remove do banco
+        }
+
+        await prisma.clientUser.delete({ where: { id: clientUserId } })
+        revalidatePath("/settings/clients")
+        return { success: true }
+    } catch (err) {
+        return toActionError(err, "Erro ao remover usuário.")
+    }
 }
 
 /**
@@ -88,9 +85,10 @@ export async function updateClientUser(
     name: string,
     email: string
 ) {
-    if (!name || !email) return { error: "Nome e e-mail são obrigatórios." }
-
     try {
+        await requireAdmin()
+        if (!name?.trim() || !email?.trim()) return { error: "Nome e e-mail são obrigatórios." }
+
         const clerk = await clerkClient()
 
         // Atualiza no Clerk
@@ -105,7 +103,7 @@ export async function updateClientUser(
             (e) => e.emailAddress === email
         )
         if (!existingEmail) {
-            const newEmail = await clerk.emailAddresses.createEmailAddress({
+            await clerk.emailAddresses.createEmailAddress({
                 userId: clerkId,
                 emailAddress: email,
                 verified: true,
@@ -121,18 +119,22 @@ export async function updateClientUser(
 
         revalidatePath("/settings/clients")
         return { success: true }
-    } catch (err: any) {
-        const msg = err?.errors?.[0]?.longMessage ?? err?.message ?? "Erro ao atualizar."
-        return { error: msg }
+    } catch (err) {
+        return toActionError(err, "Erro ao atualizar.")
     }
 }
 
 
 export async function updateClientCompany(clientUserId: string, companyId: string) {
-    await prisma.clientUser.update({
-        where: { id: clientUserId },
-        data: { companyId },
-    })
-    revalidatePath("/settings/clients")
-    return { success: true }
+    try {
+        await requireAdmin()
+        await prisma.clientUser.update({
+            where: { id: clientUserId },
+            data: { companyId },
+        })
+        revalidatePath("/settings/clients")
+        return { success: true }
+    } catch (err) {
+        return toActionError(err, "Erro ao atualizar empresa do cliente.")
+    }
 }

@@ -16,6 +16,8 @@ interface TaskDrawerProps {
   onClose: () => void
 }
 
+type TaskWithComments = Awaited<ReturnType<typeof getTaskWithComments>>
+
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   TODO:        { label: "Novo",          color: "bg-gray-100 text-gray-700"    },
   IN_PROGRESS: { label: "Em Andamento",  color: "bg-amber-100 text-amber-700"  },
@@ -29,7 +31,7 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
 }
 
 export function TaskDrawer({ taskId, companyId, onClose }: TaskDrawerProps) {
-  const [task, setTask] = useState<any>(null)
+  const [task, setTask] = useState<TaskWithComments | null>(null)
   const [loading, setLoading] = useState(false)
   const [comment, setComment] = useState("")
   const [isPending, startTransition] = useTransition()
@@ -227,7 +229,7 @@ export function TaskDrawer({ taskId, companyId, onClose }: TaskDrawerProps) {
                     <p className="text-xs">Seja o primeiro a comentar.</p>
                   </div>
                 ) : (
-                  task.comments.map((c: any) => (
+                  task.comments.map((c) => (
                     <div
                       key={c.id}
                       className="group flex gap-3 items-start"

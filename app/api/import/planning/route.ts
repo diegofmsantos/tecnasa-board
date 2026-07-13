@@ -1,16 +1,21 @@
 // app/api/import/planning/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { requireInternalUser, ActionError } from "@/lib/auth"
+import type { TaskStatus, TaskPriority } from "@prisma/client"
 import * as XLSX from "xlsx"
 
-const STATUS_MAP: Record<string, string> = {
+const MAX_IMPORT_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_IMPORT_EXTENSIONS = [".xlsx", ".xls"]
+
+const STATUS_MAP: Record<string, TaskStatus> = {
     "novo": "TODO",
     "em andamento": "IN_PROGRESS",
     "concluído": "DONE",
     "concluido": "DONE",
 }
 
-const PRIORITY_MAP: Record<string, string> = {
+const PRIORITY_MAP: Record<string, TaskPriority> = {
     "baixa": "LOW",
     "média": "MEDIUM",
     "media": "MEDIUM",
@@ -47,11 +52,32 @@ function parseDate(value: unknown): Date | null {
 
 export async function POST(req: NextRequest) {
     try {
+        try {
+            await requireInternalUser()
+        } catch (err) {
+            const message = err instanceof ActionError ? err.message : "Não autenticado."
+            return NextResponse.json({ error: message }, { status: 401 })
+        }
+
         const formData = await req.formData()
         const file = formData.get("file") as File | null
 
         if (!file) {
             return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 })
+        }
+
+        const fileName = file.name.toLowerCase()
+        if (!ALLOWED_IMPORT_EXTENSIONS.some((ext) => fileName.endsWith(ext))) {
+            return NextResponse.json(
+                { error: "Formato inválido. Envie um arquivo .xlsx ou .xls." },
+                { status: 400 }
+            )
+        }
+        if (file.size > MAX_IMPORT_FILE_SIZE) {
+            return NextResponse.json(
+                { error: "Arquivo muito grande. O limite é 10MB." },
+                { status: 400 }
+            )
         }
 
         const buffer = Buffer.from(await file.arrayBuffer())
@@ -69,7 +95,7 @@ export async function POST(req: NextRequest) {
         }
 
         const sheet = workbook.Sheets[sheetName]
-        const rows: any[] = XLSX.utils.sheet_to_json(sheet, {
+        const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
             header: 1,
             defval: "",
             range: 3, // começa na linha 4 (índice 3), pulando título, instrução e cabeçalho
@@ -201,10 +227,10 @@ export async function POST(req: NextRequest) {
             message: `${results.imported} atividades importadas com sucesso.${results.skipped > 0 ? ` ${results.skipped} linhas ignoradas.` : ""
                 }`,
         })
-    } catch (err: any) {
+    } catch (err) {
         console.error("Erro na importação:", err)
         return NextResponse.json(
-            { error: "Erro interno ao processar a planilha.", detail: err.message },
+            { error: "Erro interno ao processar a planilha.", detail: err instanceof Error ? err.message : String(err) },
             { status: 500 }
         )
     }

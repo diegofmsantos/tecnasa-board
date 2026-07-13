@@ -8,11 +8,12 @@ import { PlannerTable } from "@/components/planner-table"
 import { CompanyDashboardInline } from "@/components/company-dashboard-inline"
 import { TaskCalendar } from "@/components/task-calendar"
 import { DiagnosticTab } from "@/components/diagnostic-tab"
+import type { CompanyWithPlanner, TranscriptWithRelations, DiagnosticSessionWithRelations } from "@/types/company"
 
 type Tab = "overview" | "deliverables" | "planning" | "calendar" | "report" | "diagnostic"
 
 interface CompanyTabsProps {
-  company: any
+  company: CompanyWithPlanner
   users: { id: string; name: string }[]
   metrics: {
     totalTasks:      number
@@ -20,8 +21,8 @@ interface CompanyTabsProps {
     inProgressCount: number
     todoCount:       number
   }
-  transcripts:        any[]
-  diagnosticSessions: any[]
+  transcripts:        TranscriptWithRelations[]
+  diagnosticSessions: DiagnosticSessionWithRelations[]
   apiEnabled:         boolean
 }
 
@@ -40,7 +41,7 @@ export function CompanyTabs({
 }: CompanyTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview")
 
-  const sectors = company.sectors?.map((s: any) => ({ id: s.id, name: s.name })) ?? []
+  const sectors = company.sectors?.map((s) => ({ id: s.id, name: s.name })) ?? []
 
   return (
     <div>
@@ -92,7 +93,6 @@ export function CompanyTabs({
       {activeTab === "calendar" && (
         <TaskCalendar
           companyId={company.id}
-          companyName={company.name}
           sectors={company.sectors}
         />
       )}

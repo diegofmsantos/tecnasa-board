@@ -9,14 +9,20 @@ export async function extractTextFromFile(file: File): Promise<string> {
     }
 
     if (name.endsWith(".pdf")) {
-        // Importação dinâmica — garante que pdf-parse nunca vai para o bundle do cliente
-        const pdfParseModule = await import("pdf-parse")
-        const pdfParse = (pdfParseModule as any).default ?? pdfParseModule
-        const data = await pdfParse(buffer)
-        if (!data.text?.trim()) {
-            throw new Error("Não foi possível extrair texto do PDF. O arquivo pode ser uma imagem escaneada.")
+        // Importação dinâmica — garante que pdf-parse nunca vai para o bundle do cliente.
+        // A v2 do pdf-parse usa uma API baseada em classe (PDFParse), não a função
+        // callable da v1 que o pacote @types/pdf-parse (agora obsoleto) descrevia.
+        const { PDFParse } = await import("pdf-parse")
+        const parser = new PDFParse({ data: buffer })
+        try {
+            const result = await parser.getText()
+            if (!result.text?.trim()) {
+                throw new Error("Não foi possível extrair texto do PDF. O arquivo pode ser uma imagem escaneada.")
+            }
+            return result.text
+        } finally {
+            await parser.destroy()
         }
-        return data.text
     }
 
     if (name.endsWith(".docx")) {

@@ -1,6 +1,6 @@
 import {
-  BarChart3, FolderKanban, CheckCircle2,
-  CircleDot, Loader2, Network,
+  BarChart3, CheckCircle2,
+  CircleDot, Loader2,
 } from "lucide-react"
 
 interface Props {

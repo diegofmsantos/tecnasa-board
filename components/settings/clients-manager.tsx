@@ -71,7 +71,7 @@ export function ClientsManager({ clientUsers: initial, companies }: Props) {
 
     startTransition(async () => {
       const result = await createClientUser(fd)
-      if (result.error) {
+      if ("error" in result) {
         setError(result.error)
         return
       }
@@ -123,7 +123,7 @@ export function ClientsManager({ clientUsers: initial, companies }: Props) {
     setError("")
     startTransition(async () => {
       const result = await updateClientUser(client.id, client.clerkId, editForm.name, editForm.email)
-      if (result.error) { setError(result.error); return }
+      if ("error" in result) { setError(result.error); return }
       setClients((prev) =>
         prev.map((c) =>
           c.id === client.id ? { ...c, name: editForm.name, email: editForm.email } : c

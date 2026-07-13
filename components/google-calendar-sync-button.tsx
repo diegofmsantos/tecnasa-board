@@ -6,11 +6,10 @@ import { CalendarDays, Loader2, Check, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface Props {
-  companyId:   string
-  companyName: string
+  companyId: string
 }
 
-export function GoogleCalendarSyncButton({ companyId, companyName }: Props) {
+export function GoogleCalendarSyncButton({ companyId }: Props) {
   const [loading,  setLoading]  = useState(false)
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null)
 
@@ -20,7 +19,7 @@ export function GoogleCalendarSyncButton({ companyId, companyName }: Props) {
 
     const result = await syncCompanyToGoogleCalendar(companyId)
 
-    if (result.error) {
+    if ("error" in result) {
       setFeedback({ type: "error", msg: result.error })
     } else {
       setFeedback({

@@ -166,12 +166,6 @@ const COMPANY_STATUS: Record<string, { label: string; color: string; dot: string
     PAUSADO: { label: "Pausado", color: "#4b5563", dot: "#9ca3af" },
 }
 
-function formatDate(date: Date | string) {
-    return new Date(date).toLocaleDateString("pt-BR", {
-        day: "2-digit", month: "long", year: "numeric",
-    })
-}
-
 // ─── Componente principal ────────────────────────────────────────────────────
 
 interface ReportProps {

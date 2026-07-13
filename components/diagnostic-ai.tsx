@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from "react"
 import {
-    createTranscript, deleteTranscript,
+    createTranscript, deleteTranscript, getTranscripts,
     createDiagnosticSession, getDiagnosticSession,
     deleteDiagnosticSession, sendMessageToAI,
 } from "@/app/actions-diagnostic"
@@ -38,6 +38,8 @@ interface Message {
     content: string
 }
 
+type ActiveSession = Awaited<ReturnType<typeof getDiagnosticSession>>
+
 interface Props {
     companyId: string
     companyName: string
@@ -67,7 +69,7 @@ export function DiagnosticAI({
     const [sessionTitle, setSessionTitle] = useState("")
     const [selectedTranscripts, setSelectedTranscripts] = useState<string[]>([])
 
-    const [activeSession, setActiveSession] = useState<any>(null)
+    const [activeSession, setActiveSession] = useState<ActiveSession>(null)
     const [messages, setMessages] = useState<Message[]>([])
     const [userInput, setUserInput] = useState("")
     const [sending, setSending] = useState(false)
@@ -97,10 +99,9 @@ export function DiagnosticAI({
 
         startTransition(async () => {
             const result = await createTranscript(fd)
-            if (result.error) { setError(result.error); return }
-            const { getTranscripts } = await import("@/app/actions-diagnostic")
+            if ("error" in result) { setError(result.error); return }
             const updated = await getTranscripts(companyId)
-            setTranscripts(updated as any)
+            setTranscripts(updated)
             setTranscriptForm({ title: "", content: "", sectorId: "", file: null })
             setView("home")
         })
@@ -122,11 +123,12 @@ export function DiagnosticAI({
         if (selectedTranscripts.length === 0) { setError("Selecione ao menos uma transcrição."); return }
 
         startTransition(async () => {
-            const session = await createDiagnosticSession(companyId, sessionTitle, selectedTranscripts)
-            setSessions((prev) => [session as any, ...prev])
+            const result = await createDiagnosticSession(companyId, sessionTitle, selectedTranscripts)
+            if ("error" in result) { setError(result.error); return }
+            setSessions((prev) => [result.session, ...prev])
             setSessionTitle("")
             setSelectedTranscripts([])
-            await openSession(session as any)
+            await openSession(result.session)
         })
     }
 
@@ -134,10 +136,15 @@ export function DiagnosticAI({
     async function openSession(session: Session) {
         const full = await getDiagnosticSession(session.id)
         setActiveSession(full)
-        const rawMessages = (full?.messages as any[]) ?? []
-        const safeMessages: Message[] = rawMessages.filter(
-            (m) => m && typeof m.role === "string" && typeof m.content === "string"
-        )
+        const rawMessages: unknown = full?.messages
+        const safeMessages: Message[] = Array.isArray(rawMessages)
+            ? rawMessages.filter(
+                (m): m is Message =>
+                    !!m && typeof m === "object" && "role" in m && "content" in m &&
+                    typeof (m as Record<string, unknown>).role === "string" &&
+                    typeof (m as Record<string, unknown>).content === "string"
+            )
+            : []
         setMessages(safeMessages)
         setView("chat")
     }
@@ -162,10 +169,10 @@ export function DiagnosticAI({
 
         const result = await sendMessageToAI(activeSession.id, companyId, text)
 
-        if (result.error) {
+        if ("error" in result) {
             setMessages((prev) => [...prev, { role: "assistant", content: `⚠️ ${result.error}` }])
         } else {
-            setMessages((prev) => [...prev, { role: "assistant", content: result.message! }])
+            setMessages((prev) => [...prev, { role: "assistant", content: result.message }])
         }
         setSending(false)
     }

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import {
     Users, Plus, Trash2, X, Check, Loader2,
-    Mail, Shield, RefreshCw, Eye, EyeOff,
+    Mail, RefreshCw, Eye, EyeOff,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
@@ -62,7 +62,7 @@ export function TeamManager({ users: initial }: { users: TeamMember[] }) {
 
         startTransition(async () => {
             const result = await createTeamMember(fd)
-            if (result.error) { setError(result.error); return }
+            if ("error" in result) { setError(result.error); return }
             setMembers((prev) => [
                 { id: crypto.randomUUID(), clerkId: "", name: form.name, email: form.email, role: form.role, createdAt: new Date() },
                 ...prev,

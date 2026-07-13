@@ -8,11 +8,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { updateCompanyInfo } from "@/app/actions.company-clerk"
 import { CompanyStatusSelector } from "./company-status-selector"
+import type { CompanyStatus } from "@prisma/client"
 
 interface Company {
   id: string
   name: string
-  logoUrl: string
+  logoUrl?: string | null
   cnpj?: string | null
   segment?: string | null
   contactName?: string | null
@@ -21,6 +22,7 @@ interface Company {
   address?: string | null
   website?: string | null
   notes?: string | null
+  status: CompanyStatus
 }
 
 export function CompanyOverview({ company }: { company: Company }) {
@@ -84,7 +86,7 @@ export function CompanyOverview({ company }: { company: Company }) {
               <h2 className="text-lg font-bold text-dark-primary">Dados da Empresa</h2>
               <CompanyStatusSelector
                 companyId={company.id}
-                currentStatus={(company as any).status ?? "EM_DIAGNOSTICO"}
+                currentStatus={company.status}
               />
             </div>
             <Button

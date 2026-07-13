@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { renderToStream } from "@react-pdf/renderer"
 import { CompanyReportPDF } from "@/components/company-report-pdf"
+import { requireInternalUser, ActionError } from "@/lib/auth"
 import React from "react"
 
 export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    try {
+        await requireInternalUser()
+    } catch (err) {
+        const message = err instanceof ActionError ? err.message : "Não autenticado."
+        return NextResponse.json({ error: message }, { status: 401 })
+    }
+
     const { id } = await params
 
     const company = await prisma.company.findUnique({
@@ -37,11 +45,11 @@ export async function GET(
 
     try {
         const element = React.createElement(CompanyReportPDF, {
-            company: company as any,
+            company,
             generatedAt,
         })
 
-        // @ts-ignore
+        // @ts-expect-error — @react-pdf/renderer ainda tipa contra uma versão mais antiga do React
         const stream = await renderToStream(element)
 
         // Coleta os chunks do stream em um buffer

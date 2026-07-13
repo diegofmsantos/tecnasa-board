@@ -78,7 +78,7 @@ export function CompanyDeliverables({ companyId, deliverables }: Props) {
 
   function handleDelete(id: string) {
     if (!window.confirm("Remover este entregável?")) return
-    startTransition(() => deleteDeliverable(id, companyId))
+    startTransition(() => { deleteDeliverable(id, companyId) })
   }
 
   // Agrupar por tipo

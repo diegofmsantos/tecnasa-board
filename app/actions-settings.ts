@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { requireAdmin, toActionError } from "@/lib/auth"
+import { createDeliverableTypeSchema, formatZodError } from "@/lib/validations"
 
 // ─── CONFIGURAÇÕES GERAIS ────────────────────────────────────────────────────
 
@@ -9,6 +11,7 @@ import { revalidatePath } from "next/cache"
  * Busca todas as configurações como um objeto key→value
  */
 export async function getSettings(): Promise<Record<string, string>> {
+    await requireAdmin()
     const settings = await prisma.setting.findMany()
     return settings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {})
 }
@@ -17,17 +20,22 @@ export async function getSettings(): Promise<Record<string, string>> {
  * Salva uma ou mais configurações (upsert)
  */
 export async function saveSettings(data: Record<string, string>) {
-    await Promise.all(
-        Object.entries(data).map(([key, value]) =>
-            prisma.setting.upsert({
-                where: { key },
-                update: { value },
-                create: { key, value },
-            })
+    try {
+        await requireAdmin()
+        await Promise.all(
+            Object.entries(data).map(([key, value]) =>
+                prisma.setting.upsert({
+                    where: { key },
+                    update: { value },
+                    create: { key, value },
+                })
+            )
         )
-    )
-    revalidatePath("/settings/appearance")
-    return { success: true }
+        revalidatePath("/settings/appearance")
+        return { success: true }
+    } catch (err) {
+        return toActionError(err, "Erro ao salvar configurações.")
+    }
 }
 
 // ─── TIPOS DE ENTREGÁVEL ─────────────────────────────────────────────────────
@@ -46,6 +54,8 @@ const DEFAULT_TYPES = [
  * Busca todos os tipos — se não existir nenhum, semeia os padrões
  */
 export async function getDeliverableTypes() {
+    await requireAdmin()
+
     const existing = await prisma.deliverableType.findMany({
         orderBy: [{ order: "asc" }, { createdAt: "asc" }],
     })
@@ -65,33 +75,44 @@ export async function getDeliverableTypes() {
  * Cria um novo tipo personalizado
  */
 export async function createDeliverableType(label: string, color: string) {
-    if (!label.trim()) return { error: "Nome obrigatório." }
+    try {
+        await requireAdmin()
+        const parsed = createDeliverableTypeSchema.safeParse({ label, color })
+        if (!parsed.success) return { error: formatZodError(parsed.error) }
 
-    const lastType = await prisma.deliverableType.findFirst({
-        orderBy: { order: "desc" },
-    })
+        const lastType = await prisma.deliverableType.findFirst({
+            orderBy: { order: "desc" },
+        })
 
-    await prisma.deliverableType.create({
-        data: {
-            label: label.trim(),
-            color,
-            isDefault: false,
-            order: (lastType?.order ?? 0) + 1,
-        },
-    })
+        await prisma.deliverableType.create({
+            data: {
+                label: parsed.data.label,
+                color: parsed.data.color,
+                isDefault: false,
+                order: (lastType?.order ?? 0) + 1,
+            },
+        })
 
-    revalidatePath("/settings/deliverables")
-    return { success: true }
+        revalidatePath("/settings/deliverables")
+        return { success: true }
+    } catch (err) {
+        return toActionError(err, "Erro ao criar tipo de entregável.")
+    }
 }
 
 /**
  * Remove um tipo (não remove os padrões)
  */
 export async function deleteDeliverableType(id: string) {
-    const type = await prisma.deliverableType.findUnique({ where: { id } })
-    if (type?.isDefault) return { error: "Tipos padrão não podem ser removidos." }
+    try {
+        await requireAdmin()
+        const type = await prisma.deliverableType.findUnique({ where: { id } })
+        if (type?.isDefault) return { error: "Tipos padrão não podem ser removidos." }
 
-    await prisma.deliverableType.delete({ where: { id } })
-    revalidatePath("/settings/deliverables")
-    return { success: true }
+        await prisma.deliverableType.delete({ where: { id } })
+        revalidatePath("/settings/deliverables")
+        return { success: true }
+    } catch (err) {
+        return toActionError(err, "Erro ao remover tipo de entregável.")
+    }
 }

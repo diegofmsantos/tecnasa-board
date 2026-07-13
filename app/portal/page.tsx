@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { LogoutButton } from "@/components/logout-button"
+import Image from "next/image"
 import { Building2, FolderOpen, BarChart3, ExternalLink, Layers } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -48,7 +49,7 @@ export default async function PortalPage() {
     }
 
     const company = clientUser.company
-    const statusCfg = COMPANY_STATUS_CONFIG[(company as any).status ?? "EM_DIAGNOSTICO"]
+    const statusCfg = COMPANY_STATUS_CONFIG[company.status] ?? COMPANY_STATUS_CONFIG.EM_DIAGNOSTICO
 
     // Métricas rápidas
     const allTasks = company.sectors.flatMap(s => s.processes.flatMap(p => p.tasks))
@@ -83,8 +84,15 @@ export default async function PortalPage() {
                 {/* Cabeçalho da empresa */}
                 <div className="flex items-center gap-4 mb-8">
                     <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center bg-white shadow-sm flex-shrink-0">
-                        {(company as any).logoUrl ? (
-                            <img src={(company as any).logoUrl} alt={company.name} className="w-full h-full object-contain p-1" />
+                        {company.logoUrl ? (
+                            <Image
+                                src={company.logoUrl}
+                                alt={company.name}
+                                width={56}
+                                height={56}
+                                unoptimized // logoUrl é uma URL externa arbitrária cadastrada pelo admin — sem host fixo para permitir na allowlist de otimização de imagens
+                                className="w-full h-full object-contain p-1"
+                            />
                         ) : (
                             <Building2 className="h-7 w-7 text-tecnasa-primary" />
                         )}

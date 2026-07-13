@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2, Download } from "lucide-react"
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"

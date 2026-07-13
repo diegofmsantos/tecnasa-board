@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { updateLeadStatus, convertLeadToCompany, deleteLead } from "@/app/actions"
+import type { Lead } from "@prisma/client"
 import Link from "next/link"
 import { Building, MapPin, Briefcase, CheckCircle2, Trash2 } from "lucide-react"
 
@@ -15,7 +16,7 @@ const FUNNEL_STAGES = [
     { id: "PERDIDO", title: "Perdido", color: "bg-red-100 border-red-300 text-red-700" }
 ]
 
-export function CrmKanban({ leads }: { leads: any[] }) {
+export function CrmKanban({ leads }: { leads: Lead[] }) {
     const [isPending, startTransition] = useTransition()
 
     // Estado para controlar o Pop-up de conversão
@@ -98,7 +99,7 @@ export function CrmKanban({ leads }: { leads: any[] }) {
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     if (window.confirm(`Excluir "${lead.name}"?`)) {
-                                                        startTransition(() => deleteLead(lead.id))
+                                                        startTransition(() => { deleteLead(lead.id) })
                                                     }
                                                 }}
                                                 className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0 p-1"

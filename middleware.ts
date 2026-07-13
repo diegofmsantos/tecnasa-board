@@ -1,11 +1,13 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
+import { getSessionRole } from "@/lib/session-role"
 
-const isPublicRoute = createRouteMatcher([
-  "/login(.*)",
-  "/sign-in(.*)",
-  "/api/google-calendar/(.*)",
-])
+// Fluxo de OAuth do Google: usa o clerkId como "state" para casar o callback
+// com o usuário, não a sessão do Clerk. Passa direto sem os redirects abaixo —
+// o handler faz sua própria checagem via `auth()`.
+const isGoogleOAuthRoute = createRouteMatcher(["/api/google-calendar/(.*)"])
+
+const isAuthRoute = createRouteMatcher(["/login(.*)", "/sign-in(.*)"])
 
 const isInternalRoute = createRouteMatcher([
   "/",
@@ -14,25 +16,25 @@ const isInternalRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/crm(.*)",
   "/settings(.*)",
-  "/api/google-calendar/callback(.*)",
+  "/api/company(.*)",
+  "/api/import(.*)",
 ])
 
 const isPortalRoute = createRouteMatcher(["/portal(.*)"])
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId, sessionClaims } = await auth()
+  if (isGoogleOAuthRoute(req)) return NextResponse.next()
 
-  // Lê o role — tenta publicMetadata direto e também o campo customizado "metadata"
-  const claims = sessionClaims as any
-  const role = (claims?.publicMetadata?.role ?? claims?.metadata?.role ?? claims?.role) as string | undefined
+  const { userId, sessionClaims } = await auth()
+  const role = getSessionRole(sessionClaims)
 
   // Não logado e rota protegida → login
-  if (!userId && !isPublicRoute(req)) {
+  if (!userId && !isAuthRoute(req)) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
   // Logado tentando acessar login → redireciona para área correta
-  if (userId && isPublicRoute(req)) {
+  if (userId && isAuthRoute(req)) {
     if (role === "client") {
       return NextResponse.redirect(new URL("/portal", req.url))
     }
@@ -53,5 +55,8 @@ export default clerkMiddleware(async (auth, req) => {
 })
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // Antes excluía toda a pasta /api do middleware — isso deixava rotas como
+  // /api/import/planning e /api/company/[id]/report sem qualquer checagem de
+  // sessão. Agora só ficam de fora assets estáticos.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 }

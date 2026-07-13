@@ -2,9 +2,10 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import { auth } from "@clerk/nextjs/server"
+import { requireInternalUser, toActionError } from "@/lib/auth"
 
 export async function getTaskWithComments(taskId: string) {
+  await requireInternalUser()
   return prisma.task.findUnique({
     where: { id: taskId },
     include: {
@@ -28,28 +29,32 @@ export async function createTaskComment(
   content: string,
   companyId: string
 ) {
-  if (!taskId || !content.trim()) return { error: "Conteúdo vazio." }
+  try {
+    const user = await requireInternalUser()
+    if (!taskId || !content.trim()) return { error: "Conteúdo vazio." }
 
-  const { userId: clerkId } = await auth()
+    await prisma.taskComment.create({
+      data: {
+        taskId,
+        content: content.trim(),
+        userId: user.id,
+      },
+    })
 
-  // Busca o User interno pelo clerkId
-  const user = clerkId
-    ? await prisma.user.findUnique({ where: { clerkId } })
-    : null
-
-  await prisma.taskComment.create({
-    data: {
-      taskId,
-      content: content.trim(),
-      userId: user?.id ?? null,
-    },
-  })
-
-  revalidatePath(`/company/${companyId}`)
-  return { success: true }
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao comentar.")
+  }
 }
 
 export async function deleteTaskComment(commentId: string, companyId: string) {
-  await prisma.taskComment.delete({ where: { id: commentId } })
-  revalidatePath(`/company/${companyId}`)
+  try {
+    await requireInternalUser()
+    await prisma.taskComment.delete({ where: { id: commentId } })
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao remover comentário.")
+  }
 }

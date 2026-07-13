@@ -2,16 +2,13 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import { auth } from "@clerk/nextjs/server"
+import { requireInternalUser, toActionError } from "@/lib/auth"
 
 /**
  * Busca as notificações do usuário logado
  */
 export async function getNotifications() {
-    const { userId: clerkId } = await auth()
-    if (!clerkId) return []
-
-    const user = await prisma.user.findUnique({ where: { clerkId } })
+    const user = await requireInternalUser().catch(() => null)
     if (!user) return []
 
     return prisma.notification.findMany({
@@ -25,10 +22,7 @@ export async function getNotifications() {
  * Conta notificações não lidas do usuário logado
  */
 export async function getUnreadCount() {
-    const { userId: clerkId } = await auth()
-    if (!clerkId) return 0
-
-    const user = await prisma.user.findUnique({ where: { clerkId } })
+    const user = await requireInternalUser().catch(() => null)
     if (!user) return 0
 
     return prisma.notification.count({
@@ -37,31 +31,37 @@ export async function getUnreadCount() {
 }
 
 /**
- * Marca uma notificação como lida
+ * Marca uma notificação como lida — só o dono da notificação pode fazer isso.
  */
 export async function markAsRead(notificationId: string) {
-    await prisma.notification.update({
-        where: { id: notificationId },
-        data: { read: true },
-    })
-    revalidatePath("/")
+    try {
+        const user = await requireInternalUser()
+        await prisma.notification.updateMany({
+            where: { id: notificationId, userId: user.id },
+            data: { read: true },
+        })
+        revalidatePath("/")
+        return { success: true }
+    } catch (err) {
+        return toActionError(err, "Erro ao marcar notificação como lida.")
+    }
 }
 
 /**
  * Marca todas as notificações do usuário como lidas
  */
 export async function markAllAsRead() {
-    const { userId: clerkId } = await auth()
-    if (!clerkId) return
-
-    const user = await prisma.user.findUnique({ where: { clerkId } })
-    if (!user) return
-
-    await prisma.notification.updateMany({
-        where: { userId: user.id, read: false },
-        data: { read: true },
-    })
-    revalidatePath("/")
+    try {
+        const user = await requireInternalUser()
+        await prisma.notification.updateMany({
+            where: { userId: user.id, read: false },
+            data: { read: true },
+        })
+        revalidatePath("/")
+        return { success: true }
+    } catch (err) {
+        return toActionError(err, "Erro ao marcar notificações como lidas.")
+    }
 }
 
 /**
@@ -73,6 +73,8 @@ export async function markAllAsRead() {
  * Evita duplicatas verificando se já existe notificação para o mesmo taskId no mesmo dia
  */
 export async function generateDeadlineNotifications() {
+    await requireInternalUser()
+
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const in2Days = new Date(today.getTime() + 2 * 86400000)
@@ -102,8 +104,6 @@ export async function generateDeadlineNotifications() {
             process: { include: { sector: { include: { company: true } } } },
         },
     })
-
-    const todayStr = today.toISOString().split("T")[0]
 
     for (const task of overdueTasks) {
         if (!task.userId) continue

@@ -1,11 +1,12 @@
 "use client"
 
-import { updateTaskStatus, deleteTask } from "@/app/actions"
+import { deleteTask } from "@/app/actions"
+import type { Task } from "@prisma/client"
 import { Trash2, Clock, AlertCircle } from "lucide-react"
 import { format, isPast, isToday } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
-export function TaskCard({ task }: { task: any }) {
+export function TaskCard({ task }: { task: Task }) {
 
     // Ações de fallback (caso você queira deletar ou mudar pelo menu no futuro)
     async function handleDelete() {
@@ -20,11 +21,11 @@ export function TaskCard({ task }: { task: any }) {
         MEDIUM: { color: "bg-yellow-100 text-yellow-700", label: "Média" },
         HIGH: { color: "bg-red-100 text-red-700", label: "Alta" },
     }
-    const pConfig = priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.MEDIUM
+    const pConfig = priorityConfig[task.priority] || priorityConfig.MEDIUM
 
     // Lógica de Prazos
     const hasDueDate = !!task.dueDate
-    const isOverdue = hasDueDate && isPast(new Date(task.dueDate)) && !isToday(new Date(task.dueDate)) && task.status !== "DONE"
+    const isOverdue = hasDueDate && isPast(new Date(task.dueDate!)) && !isToday(new Date(task.dueDate!)) && task.status !== "DONE"
 
     return (
         <div
@@ -60,7 +61,7 @@ export function TaskCard({ task }: { task: any }) {
                         }`}>
                         <Clock className="h-3 w-3" />
                         {isOverdue && task.status !== "DONE" ? "Atrasada: " : ""}
-                        {format(new Date(task.dueDate), "dd MMM", { locale: ptBR })}
+                        {format(new Date(task.dueDate!), "dd MMM", { locale: ptBR })}
                     </span>
                 )}
             </div>

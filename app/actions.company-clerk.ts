@@ -2,68 +2,103 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import { auth } from "@clerk/nextjs/server"
+import { requireInternalUser, toActionError } from "@/lib/auth"
+import { updateCompanyInfoSchema, createDeliverableSchema, companyStatusSchema, formatZodError } from "@/lib/validations"
 
 export async function updateCompanyInfo(formData: FormData) {
-  const companyId = formData.get("companyId") as string
-  if (!companyId) return { error: "ID da empresa não informado." }
+  try {
+    await requireInternalUser()
+    const parsed = updateCompanyInfoSchema.safeParse({
+      companyId: formData.get("companyId"),
+      name: formData.get("name"),
+      logoUrl: formData.get("logoUrl"),
+      cnpj: formData.get("cnpj"),
+      segment: formData.get("segment"),
+      contactName: formData.get("contactName"),
+      contactEmail: formData.get("contactEmail"),
+      contactPhone: formData.get("contactPhone"),
+      address: formData.get("address"),
+      website: formData.get("website"),
+      notes: formData.get("notes"),
+    })
+    if (!parsed.success) return { error: formatZodError(parsed.error) }
+    const { companyId, ...rest } = parsed.data
 
-  const data = {
-    name: (formData.get("name") as string) || undefined,
-    logoUrl: (formData.get("logoUrl") as string) || null,
-    cnpj: (formData.get("cnpj") as string) || null,
-    segment: (formData.get("segment") as string) || null,
-    contactName: (formData.get("contactName") as string) || null,
-    contactEmail: (formData.get("contactEmail") as string) || null,
-    contactPhone: (formData.get("contactPhone") as string) || null,
-    address: (formData.get("address") as string) || null,
-    website: (formData.get("website") as string) || null,
-    notes: (formData.get("notes") as string) || null,
+    const data = {
+      name: rest.name,
+      logoUrl: rest.logoUrl ?? null,
+      cnpj: rest.cnpj ?? null,
+      segment: rest.segment ?? null,
+      contactName: rest.contactName ?? null,
+      contactEmail: rest.contactEmail ?? null,
+      contactPhone: rest.contactPhone ?? null,
+      address: rest.address ?? null,
+      website: rest.website ?? null,
+      notes: rest.notes ?? null,
+    }
+
+    await prisma.company.update({ where: { id: companyId }, data })
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao atualizar dados da empresa.")
   }
-
-  await prisma.company.update({ where: { id: companyId }, data })
-  revalidatePath(`/company/${companyId}`)
-  return { success: true }
 }
 
 export async function updateCompanyStatus(companyId: string, status: string) {
-  if (!companyId || !status) return { error: "Dados inválidos." }
-  await prisma.company.update({ where: { id: companyId }, data: { status } })
-  revalidatePath(`/company/${companyId}`)
-  revalidatePath("/")
-  return { success: true }
+  try {
+    await requireInternalUser()
+    if (!companyId) return { error: "Empresa não informada." }
+    const parsed = companyStatusSchema.safeParse(status)
+    if (!parsed.success) return { error: "Status inválido." }
+
+    await prisma.company.update({ where: { id: companyId }, data: { status: parsed.data } })
+    revalidatePath(`/company/${companyId}`)
+    revalidatePath("/")
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao atualizar status da empresa.")
+  }
 }
 
 export async function createDeliverable(formData: FormData) {
-  const companyId = formData.get("companyId") as string
-  const name = formData.get("name") as string
-  const type = formData.get("type") as string
-  const url = formData.get("url") as string
-  const notes = formData.get("notes") as string
+  try {
+    const user = await requireInternalUser()
+    const parsed = createDeliverableSchema.safeParse({
+      companyId: formData.get("companyId"),
+      name: formData.get("name"),
+      type: formData.get("type"),
+      url: formData.get("url"),
+      notes: formData.get("notes"),
+    })
+    if (!parsed.success) return { error: formatZodError(parsed.error) }
+    const { companyId, name, type, url, notes } = parsed.data
 
-  if (!companyId || !name || !url) return { error: "Preencha os campos obrigatórios." }
+    await prisma.deliverable.create({
+      data: {
+        companyId,
+        name,
+        type: type || "OUTRO",
+        url,
+        notes: notes ?? null,
+        userId: user.id,
+      }
+    })
 
-  const { userId: clerkId } = await auth()
-  const user = clerkId
-    ? await prisma.user.findUnique({ where: { clerkId } })
-    : null
-
-  await prisma.deliverable.create({
-    data: {
-      companyId,
-      name,
-      type: type || "OUTRO",
-      url,
-      notes: notes || null,
-      userId: user?.id ?? null,
-    }
-  })
-
-  revalidatePath(`/company/${companyId}`)
-  return { success: true }
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao adicionar entregável.")
+  }
 }
 
 export async function deleteDeliverable(deliverableId: string, companyId: string) {
-  await prisma.deliverable.delete({ where: { id: deliverableId } })
-  revalidatePath(`/company/${companyId}`)
+  try {
+    await requireInternalUser()
+    await prisma.deliverable.delete({ where: { id: deliverableId } })
+    revalidatePath(`/company/${companyId}`)
+    return { success: true }
+  } catch (err) {
+    return toActionError(err, "Erro ao remover entregável.")
+  }
 }
