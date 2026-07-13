@@ -77,14 +77,15 @@ model User {
   role      Role     @default(CONSULTOR)
   createdAt DateTime @default(now())
 
-  tasks         Task[]
-  deliverables  Deliverable[]
-  comments      TaskComment[]
-  notifications Notification[]
+  tasks              Task[]
+  deliverables       Deliverable[]
+  comments           TaskComment[]
+  notifications      Notification[]
   activityLogs       ActivityLog[]
   integrations       UserIntegration[]
-  transcripts   Transcript[]
+  transcripts        Transcript[]
   diagnosticSessions DiagnosticSession[]
+  pdcaMeetings       PdcaMeeting[]
 }
 
 // 2. Usuário Cliente (acesso ao portal)
@@ -115,17 +116,19 @@ model Company {
   notes        String?
   status       CompanyStatus @default(EM_DIAGNOSTICO)
 
-  sectors      Sector[]
-  deliverables Deliverable[]
-  clientUsers  ClientUser[]
-  transcripts  Transcript[]
+  sectors            Sector[]
+  deliverables       Deliverable[]
+  clientUsers        ClientUser[]
+  transcripts        Transcript[]
   diagnosticSessions DiagnosticSession[]
+  pdcaMeetings       PdcaMeeting[]
 }
 
 // 3. O Setor
 model Sector {
   id        String  @id @default(cuid())
   name      String
+  pilar     String?
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
@@ -147,7 +150,7 @@ model Process {
 
 // 5. A Tarefa
 model Task {
-  id          String  @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
   description String?
   status      TaskStatus   @default(TODO)
@@ -180,14 +183,14 @@ model TaskComment {
 
 // 7. Módulo CRM: O Potencial Cliente (Lead)
 model Lead {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
   cnpj        String?
   contactRole String?
   segment     String?
   address     String?
   status      LeadStatus @default(PROSPECT)
-  createdAt   DateTime @default(now())
+  createdAt   DateTime   @default(now())
 
   interactions Interaction[]
 }
@@ -210,20 +213,20 @@ model ActivityLog {
   description String
   companyId   String?
   userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
+  user        User?          @relation(fields: [userId], references: [id])
+  createdAt   DateTime       @default(now())
 }
 
 model Notification {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   title     String
   message   String
   type      NotificationType @default(INFO)
-  read      Boolean  @default(false)
+  read      Boolean          @default(false)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   taskId    String?
-  createdAt DateTime @default(now())
+  createdAt DateTime         @default(now())
 }
 
 model Setting {
@@ -242,6 +245,7 @@ model DeliverableType {
   order     Int      @default(0)
   createdAt DateTime @default(now())
 }
+
 model Deliverable {
   id        String   @id @default(cuid())
   name      String
@@ -257,15 +261,15 @@ model Deliverable {
 
 // 16. Integrações de usuário (Google Calendar, etc.)
 model UserIntegration {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider     String   // "google"
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String // "google"
   accessToken  String
   refreshToken String?
   expiresAt    DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@unique([userId, provider])
 }
@@ -298,4 +302,22 @@ model DiagnosticSession {
   updatedAt DateTime @updatedAt
 
   transcripts Transcript[]
+}
+
+model PdcaMeeting {
+  id        String   @id @default(cuid())
+  date      DateTime
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  etapaPdca      String
+  avancos        String?
+  observacoes    String?
+  decisoes       String?
+  proximosPassos String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

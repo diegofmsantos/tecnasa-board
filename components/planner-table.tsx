@@ -4,6 +4,7 @@ import { updateTaskInline, deletePlannerTask, updateSectorName, createPlannerPro
 import { useTransition, useState } from "react"
 import { ExternalLink, Trash2, Plus, ChevronDown, ChevronRight, Table2, CalendarRange, MessageSquare } from "lucide-react"
 import { TaskDrawer } from "@/components/task-drawer"
+import { ProcessProgress } from "@/components/process-progress"
 import type { SectorWithPlanner } from "@/types/company"
 import dynamic from "next/dynamic"
 
@@ -22,7 +23,7 @@ export function PlannerTable({ sectors, companyId, users }: PlannerTableProps) {
     const [isPending, startTransition] = useTransition()
     const [collapsedProcesses, setCollapsedProcesses] = useState<Record<string, boolean>>(
         () => Object.fromEntries(
-            sectors.flatMap(s => s.processes.map((p) => [p.id, true]))
+            sectors.flatMap(s => s.processes.map((p: { id: string }) => [p.id, true]))
         )
     )
     const [activeTab, setActiveTab] = useState<"TABLE" | "GANTT">("TABLE")
@@ -100,7 +101,7 @@ export function PlannerTable({ sectors, companyId, users }: PlannerTableProps) {
                     </button>
                 </div>
 
-                {/* VISÃO GANTT — renderiza fora do loop de setores */}
+                {/* VISÃO GANTT */}
                 {activeTab === "GANTT" && (
                     <GanttChart sectors={sectors} />
                 )}
@@ -110,7 +111,7 @@ export function PlannerTable({ sectors, companyId, users }: PlannerTableProps) {
                     <div key={sector.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
                         <div className="bg-dark-primary text-white px-6 py-4 flex justify-between items-center">
-                            <div className="flex items-center gap-2 w-full max-w-lg">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <input
                                     type="text"
                                     defaultValue={sector.name}
@@ -118,7 +119,7 @@ export function PlannerTable({ sectors, companyId, users }: PlannerTableProps) {
                                     className="text-lg font-bold bg-transparent border-b border-transparent hover:border-white/50 focus:border-white outline-none w-full px-1"
                                 />
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-shrink-0">
                                 <button
                                     onClick={() => handleAddProcess(sector.id)}
                                     className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
@@ -142,24 +143,32 @@ export function PlannerTable({ sectors, companyId, users }: PlannerTableProps) {
                                     const isCollapsed = collapsedProcesses[process.id]
                                     return (
                                         <div key={process.id} className="border border-gray-100 rounded-lg overflow-hidden shadow-sm transition-all">
-                                            <div className={`bg-tecnasa-primary/10 px-4 py-2 flex items-center justify-between group/stage ${!isCollapsed ? 'border-b border-gray-100' : ''}`}>
-                                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                    <button onClick={() => toggleProcess(process.id)} className="p-1 hover:bg-tecnasa-primary/20 rounded">
-                                                        {isCollapsed
-                                                            ? <ChevronRight className="h-4 w-4 text-tecnasa-primary" />
-                                                            : <ChevronDown className="h-4 w-4 text-tecnasa-primary" />}
-                                                    </button>
-                                                    <span className="w-3 h-3 rounded-full bg-tecnasa-primary flex-shrink-0"></span>
-                                                    <input
-                                                        type="text"
-                                                        defaultValue={process.title}
-                                                        onBlur={(e) => handleProcessRename(process.id, e.target.value)}
-                                                        className="font-bold text-tecnasa-primary bg-transparent border-b border-transparent hover:border-tecnasa-primary/30 focus:border-tecnasa-primary outline-none w-full px-1 py-0.5 min-w-0"
-                                                    />
-                                                </div>
+                                            <div className={`bg-tecnasa-primary/10 px-4 py-2 flex items-center gap-2 group/stage ${!isCollapsed ? 'border-b border-gray-100' : ''}`}>
+                                                {/* Toggle */}
+                                                <button onClick={() => toggleProcess(process.id)} className="p-1 hover:bg-tecnasa-primary/20 rounded flex-shrink-0">
+                                                    {isCollapsed
+                                                        ? <ChevronRight className="h-4 w-4 text-tecnasa-primary" />
+                                                        : <ChevronDown className="h-4 w-4 text-tecnasa-primary" />}
+                                                </button>
+
+                                                {/* Bolinha */}
+                                                <span className="w-3 h-3 rounded-full bg-tecnasa-primary flex-shrink-0"></span>
+
+                                                {/* Nome da etapa */}
+                                                <input
+                                                    type="text"
+                                                    defaultValue={process.title}
+                                                    onBlur={(e) => handleProcessRename(process.id, e.target.value)}
+                                                    className="font-bold text-tecnasa-primary bg-transparent border-b border-transparent hover:border-tecnasa-primary/30 focus:border-tecnasa-primary outline-none flex-1 min-w-0 px-1 py-0.5"
+                                                />
+
+                                                {/* % de Avanço */}
+                                                <ProcessProgress tasks={process.tasks} processTitle={process.title} />
+
+                                                {/* Deletar */}
                                                 <button
                                                     onClick={() => handleDeleteProcess(process.id)}
-                                                    className="text-gray-400 hover:text-red-500 opacity-0 group-hover/stage:opacity-100 px-2"
+                                                    className="text-gray-400 hover:text-red-500 opacity-0 group-hover/stage:opacity-100 px-2 flex-shrink-0"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </button>

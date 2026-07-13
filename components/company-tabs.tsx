@@ -1,43 +1,57 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, FolderOpen, Table2, BarChart3, CalendarDays, Brain } from "lucide-react"
+import { Building2, FolderOpen, Table2, BarChart3, CalendarDays, Brain, ClipboardList } from "lucide-react"
 import { CompanyOverview } from "@/components/company-overview"
 import { CompanyDeliverables } from "@/components/company-deliverables"
 import { PlannerTable } from "@/components/planner-table"
 import { CompanyDashboardInline } from "@/components/company-dashboard-inline"
 import { TaskCalendar } from "@/components/task-calendar"
 import { DiagnosticTab } from "@/components/diagnostic-tab"
+import { PdcaMeetingsPanel } from "@/components/pdca-meetings-panel"
 import type { CompanyWithPlanner, TranscriptWithRelations, DiagnosticSessionWithRelations } from "@/types/company"
 
-type Tab = "overview" | "deliverables" | "planning" | "calendar" | "report" | "diagnostic"
+type Tab = "overview" | "deliverables" | "planning" | "calendar" | "report" | "diagnostic" | "pdca"
+
+interface PdcaMeeting {
+  id: string
+  date: Date
+  etapaPdca: string
+  avancos: string | null
+  observacoes: string | null
+  decisoes: string | null
+  proximosPassos: string | null
+  user?: { name: string } | null
+}
 
 interface CompanyTabsProps {
   company: CompanyWithPlanner
   users: { id: string; name: string }[]
   metrics: {
-    totalTasks:      number
-    doneCount:       number
+    totalTasks: number
+    doneCount: number
     inProgressCount: number
-    todoCount:       number
+    todoCount: number
   }
-  transcripts:        TranscriptWithRelations[]
+  transcripts: TranscriptWithRelations[]
   diagnosticSessions: DiagnosticSessionWithRelations[]
-  apiEnabled:         boolean
+  apiEnabled: boolean
+  pdcaMeetings: PdcaMeeting[]
 }
 
 const tabs = [
-  { id: "overview",    label: "Visão Geral",    icon: Building2    },
-  { id: "deliverables",label: "Entregáveis",    icon: FolderOpen   },
-  { id: "planning",    label: "Planejamento",   icon: Table2       },
-  { id: "calendar",    label: "Calendário",     icon: CalendarDays },
-  { id: "report",      label: "Relatório",      icon: BarChart3    },
-  { id: "diagnostic",  label: "Diagnóstico IA", icon: Brain        },
+  { id: "overview", label: "Visão Geral", icon: Building2 },
+  { id: "deliverables", label: "Entregáveis", icon: FolderOpen },
+  { id: "planning", label: "Planejamento", icon: Table2 },
+  { id: "calendar", label: "Calendário", icon: CalendarDays },
+  { id: "report", label: "Relatório", icon: BarChart3 },
+  { id: "pdca", label: "PDCA", icon: ClipboardList },
+  { id: "diagnostic", label: "Diagnóstico IA", icon: Brain },
 ] as const
 
 export function CompanyTabs({
   company, users, metrics,
-  transcripts, diagnosticSessions, apiEnabled,
+  transcripts, diagnosticSessions, apiEnabled, pdcaMeetings,
 }: CompanyTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview")
 
@@ -48,20 +62,24 @@ export function CompanyTabs({
       {/* Barra de Abas */}
       <div className="flex items-center pb-2 gap-1 border-b border-gray-200 bg-dark-primary mb-8 rounded-xl overflow-x-auto">
         {tabs.map((tab) => {
-          const Icon     = tab.icon
+          const Icon = tab.icon
           const isActive = activeTab === tab.id
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 p-5 text-sm font-medium transition-colors relative whitespace-nowrap flex-shrink-0 ${
-                isActive
+              onClick={() => setActiveTab(tab.id as Tab)}
+              className={`flex items-center gap-2 p-5 text-sm font-medium transition-colors relative whitespace-nowrap flex-shrink-0 ${isActive
                   ? "text-tecnasa-accent"
                   : "text-white hover:text-tecnasa-accent"
-              }`}
+                }`}
             >
               <Icon className="h-4 w-4" />
               {tab.label}
+              {tab.id === "pdca" && pdcaMeetings.length > 0 && (
+                <span className="bg-tecnasa-accent/20 text-tecnasa-accent text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {pdcaMeetings.length}
+                </span>
+              )}
               {isActive && (
                 <span className="absolute bottom-3 left-2 w-full h-[2px] bg-tecnasa-accent rounded-t-full" />
               )}
@@ -101,6 +119,13 @@ export function CompanyTabs({
         <CompanyDashboardInline
           company={company}
           metrics={metrics}
+        />
+      )}
+
+      {activeTab === "pdca" && (
+        <PdcaMeetingsPanel
+          companyId={company.id}
+          meetings={pdcaMeetings}
         />
       )}
 

@@ -57,6 +57,7 @@ export default async function CompanyPage({ params }: Props) {
     todoCount,
     transcripts,
     diagnosticSessions,
+    pdcaMeetings,
   ] = await Promise.all([
     prisma.task.count({ where: companyFilter }),
     prisma.task.count({ where: { ...companyFilter, status: "DONE" } }),
@@ -77,6 +78,11 @@ export default async function CompanyPage({ params }: Props) {
         transcripts: { select: { id: true, title: true } },
         user: { select: { name: true } },
       },
+    }),
+    prisma.pdcaMeeting.findMany({
+      where: { companyId: id },
+      include: { user: { select: { name: true } } },
+      orderBy: { date: "desc" },
     }),
   ])
 
@@ -140,6 +146,7 @@ export default async function CompanyPage({ params }: Props) {
           transcripts={transcripts}
           diagnosticSessions={diagnosticSessions}
           apiEnabled={apiEnabled}
+          pdcaMeetings={pdcaMeetings}
         />
       </main>
     </div>
