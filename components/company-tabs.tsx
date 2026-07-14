@@ -1,17 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, FolderOpen, Table2, BarChart3, CalendarDays, Brain, ClipboardList } from "lucide-react"
+import { Building2, FolderOpen, Table2, BarChart3, CalendarDays, ClipboardList } from "lucide-react"
 import { CompanyOverview } from "@/components/company-overview"
 import { CompanyDeliverables } from "@/components/company-deliverables"
 import { PlannerTable } from "@/components/planner-table"
 import { CompanyDashboardInline } from "@/components/company-dashboard-inline"
 import { TaskCalendar } from "@/components/task-calendar"
-import { DiagnosticTab } from "@/components/diagnostic-tab"
 import { PdcaMeetingsPanel } from "@/components/pdca-meetings-panel"
-import type { CompanyWithPlanner, TranscriptWithRelations, DiagnosticSessionWithRelations } from "@/types/company"
+import type { CompanyWithPlanner } from "@/types/company"
 
-type Tab = "overview" | "deliverables" | "planning" | "calendar" | "report" | "diagnostic" | "pdca"
+type Tab = "overview" | "deliverables" | "planning" | "calendar" | "report" | "pdca"
 
 interface PdcaMeeting {
   id: string
@@ -33,9 +32,6 @@ interface CompanyTabsProps {
     inProgressCount: number
     todoCount: number
   }
-  transcripts: TranscriptWithRelations[]
-  diagnosticSessions: DiagnosticSessionWithRelations[]
-  apiEnabled: boolean
   pdcaMeetings: PdcaMeeting[]
 }
 
@@ -46,16 +42,12 @@ const tabs = [
   { id: "calendar", label: "Calendário", icon: CalendarDays },
   { id: "report", label: "Relatório", icon: BarChart3 },
   { id: "pdca", label: "PDCA", icon: ClipboardList },
-  { id: "diagnostic", label: "Diagnóstico IA", icon: Brain },
 ] as const
 
 export function CompanyTabs({
-  company, users, metrics,
-  transcripts, diagnosticSessions, apiEnabled, pdcaMeetings,
+  company, users, metrics, pdcaMeetings,
 }: CompanyTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview")
-
-  const sectors = company.sectors?.map((s) => ({ id: s.id, name: s.name })) ?? []
 
   return (
     <div>
@@ -126,17 +118,6 @@ export function CompanyTabs({
         <PdcaMeetingsPanel
           companyId={company.id}
           meetings={pdcaMeetings}
-        />
-      )}
-
-      {activeTab === "diagnostic" && (
-        <DiagnosticTab
-          companyId={company.id}
-          companyName={company.name}
-          sectors={sectors}
-          initialTranscripts={transcripts}
-          initialSessions={diagnosticSessions}
-          apiEnabled={apiEnabled}
         />
       )}
     </div>

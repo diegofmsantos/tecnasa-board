@@ -33,8 +33,6 @@ enum CompanyStatus {
   PAUSADO
 }
 
-// PROSPECT e LEADS representam a mesma coluna ("Leads") no funil do CRM —
-// mantidos os dois para não quebrar leads já persistidos com PROSPECT.
 enum LeadStatus {
   PROSPECT
   LEADS
@@ -77,15 +75,13 @@ model User {
   role      Role     @default(CONSULTOR)
   createdAt DateTime @default(now())
 
-  tasks              Task[]
-  deliverables       Deliverable[]
-  comments           TaskComment[]
-  notifications      Notification[]
-  activityLogs       ActivityLog[]
-  integrations       UserIntegration[]
-  transcripts        Transcript[]
-  diagnosticSessions DiagnosticSession[]
-  pdcaMeetings       PdcaMeeting[]
+  tasks         Task[]
+  deliverables  Deliverable[]
+  comments      TaskComment[]
+  notifications Notification[]
+  activityLogs  ActivityLog[]
+  integrations  UserIntegration[]
+  pdcaMeetings  PdcaMeeting[]
 }
 
 // 2. Usuário Cliente (acesso ao portal)
@@ -116,12 +112,10 @@ model Company {
   notes        String?
   status       CompanyStatus @default(EM_DIAGNOSTICO)
 
-  sectors            Sector[]
-  deliverables       Deliverable[]
-  clientUsers        ClientUser[]
-  transcripts        Transcript[]
-  diagnosticSessions DiagnosticSession[]
-  pdcaMeetings       PdcaMeeting[]
+  sectors      Sector[]
+  deliverables Deliverable[]
+  clientUsers  ClientUser[]
+  pdcaMeetings PdcaMeeting[]
 }
 
 // 3. O Setor
@@ -132,8 +126,7 @@ model Sector {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  processes   Process[]
-  transcripts Transcript[]
+  processes Process[]
 }
 
 // 4. O Processo
@@ -170,7 +163,7 @@ model Task {
   createdAt DateTime      @default(now())
 }
 
-// 6. NOVO: Comentários por Tarefa
+// 6. Comentários por Tarefa
 model TaskComment {
   id        String   @id @default(cuid())
   content   String
@@ -272,36 +265,6 @@ model UserIntegration {
   updatedAt    DateTime  @updatedAt
 
   @@unique([userId, provider])
-}
-
-model Transcript {
-  id        String   @id @default(cuid())
-  title     String
-  content   String
-  companyId String
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  sectorId  String?
-  sector    Sector?  @relation(fields: [sectorId], references: [id])
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-
-  sessions DiagnosticSession[]
-}
-
-// 15. Sessões de diagnóstico com IA
-model DiagnosticSession {
-  id        String   @id @default(cuid())
-  title     String
-  companyId String
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  messages  Json     @default("[]")
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  transcripts Transcript[]
 }
 
 model PdcaMeeting {

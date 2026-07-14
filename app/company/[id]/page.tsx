@@ -55,38 +55,18 @@ export default async function CompanyPage({ params }: Props) {
     doneCount,
     inProgressCount,
     todoCount,
-    transcripts,
-    diagnosticSessions,
     pdcaMeetings,
   ] = await Promise.all([
     prisma.task.count({ where: companyFilter }),
     prisma.task.count({ where: { ...companyFilter, status: "DONE" } }),
     prisma.task.count({ where: { ...companyFilter, status: "IN_PROGRESS" } }),
     prisma.task.count({ where: { ...companyFilter, status: "TODO" } }),
-    prisma.transcript.findMany({
-      where: { companyId: id },
-      orderBy: { createdAt: "desc" },
-      include: {
-        sector: { select: { id: true, name: true } },
-        user: { select: { name: true } },
-      },
-    }),
-    prisma.diagnosticSession.findMany({
-      where: { companyId: id },
-      orderBy: { updatedAt: "desc" },
-      include: {
-        transcripts: { select: { id: true, title: true } },
-        user: { select: { name: true } },
-      },
-    }),
     prisma.pdcaMeeting.findMany({
       where: { companyId: id },
       include: { user: { select: { name: true } } },
       orderBy: { date: "desc" },
     }),
   ])
-
-  const apiEnabled = !!process.env.ANTHROPIC_API_KEY
 
   return (
     <div className="min-h-screen bg-neutral-bg text-text-main flex flex-col">
@@ -143,9 +123,6 @@ export default async function CompanyPage({ params }: Props) {
           company={company}
           users={users}
           metrics={{ totalTasks, doneCount, inProgressCount, todoCount }}
-          transcripts={transcripts}
-          diagnosticSessions={diagnosticSessions}
-          apiEnabled={apiEnabled}
           pdcaMeetings={pdcaMeetings}
         />
       </main>

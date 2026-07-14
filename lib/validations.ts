@@ -115,13 +115,6 @@ export const createClientUserSchema = z.object({
   companyId: requiredString(100, "Empresa"),
 })
 
-export const createTranscriptSchema = z.object({
-  title: requiredString(200, "Título"),
-  companyId: requiredString(100, "Empresa"),
-  sectorId: optionalString(100),
-  content: optionalString(200_000),
-})
-
 export const createDeliverableTypeSchema = z.object({
   label: requiredString(80, "Nome"),
   color: requiredString(120, "Cor"),
